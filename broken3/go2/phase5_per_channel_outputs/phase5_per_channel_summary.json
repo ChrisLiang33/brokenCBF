@@ -1,0 +1,44 @@
+{
+  "summary": [
+    {
+      "channel": "disturbance",
+      "phi_span": 0.1206347644329071,
+      "phi_span_pct": 12.06347644329071,
+      "alpha_span": 0.8273138999938965,
+      "alpha_span_pct": 21.771418420892015,
+      "drives_phi": false,
+      "drives_alpha": false
+    },
+    {
+      "channel": "friction",
+      "phi_span": 0.056561559438705444,
+      "phi_span_pct": 5.656155943870544,
+      "alpha_span": 1.5446934700012207,
+      "alpha_span_pct": 40.64982815792686,
+      "drives_phi": false,
+      "drives_alpha": true
+    },
+    {
+      "channel": "mass_delta",
+      "phi_span": 0.007127165794372559,
+      "phi_span_pct": 0.7127165794372559,
+      "alpha_span": 0.24807286262512207,
+      "alpha_span_pct": 6.528233226976897,
+      "drives_phi": false,
+      "drives_alpha": false
+    },
+    {
+      "channel": "motor_strength",
+      "phi_span": 0.26362717151641846,
+      "phi_span_pct": 26.362717151641846,
+      "alpha_span": 0.33118391036987305,
+      "alpha_span_pct": 8.71536606236508,
+      "drives_phi": true,
+      "drives_alpha": false
+    }
+  ],
+  "drivers": [
+    "friction",
+    "motor_strength"
+  ]
+}

@@ -1,0 +1,62 @@
+<mujoco model="dot_mvp">
+  <option timestep="0.005"/>
+
+  <visual>
+    <global offwidth="1280" offheight="720"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0"
+             width="32" height="32"/>
+    <texture name="groundplane" type="2d" builtin="checker" mark="edge"
+             rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" markrgb="0.8 0.8 0.8"
+             width="300" height="300"/>
+    <material name="groundplane" texture="groundplane" texuniform="true"
+              texrepeat="5 5" reflectance="0.2"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 3" dir="0 0 -1" directional="true"/>
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+
+    <!-- Agent (the dot) -->
+    <body name="agent" pos="0 0 0.1">
+      <freejoint/>
+      <geom name="agent_geom" type="sphere" size="0.1" rgba="0.2 0.5 1.0 1"/>
+    </body>
+
+    <!-- Goal marker -->
+    <body name="goal" mocap="true" pos="3 0 0.1">
+      <geom name="goal_marker" type="sphere" size="0.12"
+            rgba="0.95 0.2 0.2 0.9" contype="0" conaffinity="0"/>
+    </body>
+
+    <!-- Next-waypoint marker -->
+    <body name="next_wp" mocap="true" pos="0 0 0.05">
+      <geom name="next_wp_marker" type="sphere" size="0.06"
+            rgba="0.2 0.9 0.2 0.9" contype="0" conaffinity="0"/>
+    </body>
+
+    <!-- Cylinder obstacles -->
+    <body name="obs1" pos="1.0 -0.15 0.25">
+      <geom name="obs1_geom" type="cylinder" size="0.3 0.25"
+            rgba="0.45 0.45 0.55 1.0"/>
+    </body>
+    <body name="obs2" pos="2.0 0.15 0.25">
+      <geom name="obs2_geom" type="cylinder" size="0.3 0.25"
+            rgba="0.45 0.45 0.55 1.0"/>
+    </body>
+
+    <!-- Ghost markers showing the filter's *perceived* obstacle positions
+         (true + sensor noise). Env updates these per episode. Flat orange
+         rings, no contact. -->
+    <body name="perceived_obs1" mocap="true" pos="1.0 -0.15 0.01">
+      <geom name="perceived_obs1_marker" type="cylinder" size="0.3 0.005"
+            rgba="0.95 0.55 0.15 0.35" contype="0" conaffinity="0"/>
+    </body>
+    <body name="perceived_obs2" mocap="true" pos="2.0 0.15 0.01">
+      <geom name="perceived_obs2_marker" type="cylinder" size="0.3 0.005"
+            rgba="0.95 0.55 0.15 0.35" contype="0" conaffinity="0"/>
+    </body>
+  </worldbody>
+</mujoco>

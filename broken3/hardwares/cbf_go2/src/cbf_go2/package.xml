@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<!--
+  package.xml — cbf_go2
+
+  ROS 2 package that deploys the adaptive CBF parameter policy (trained
+  in ../../../../go2/) on a Unitree Go2. See README.md at the workspace
+  root for the deployment story.
+-->
+<package format="3">
+  <name>cbf_go2</name>
+  <version>0.1.0</version>
+  <description>Adaptive CBF parameter policy deployment for Unitree Go2.</description>
+  <maintainer email="xianmailiang@gmail.com">Chris Liang</maintainer>
+  <license>BSD 3-Clause License</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>unitree_go</depend>
+  <depend>unitree_api</depend>
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>pcl_conversions</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_eigen</depend>
+
+  <!-- Python nodes: cbf_inference_node, cbf_grid_node. -->
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs_py</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-torch</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

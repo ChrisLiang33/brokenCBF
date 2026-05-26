@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+
+# MVP phase run artifacts (regenerable; reference figures live in results/)
+phase0_fixed_cbf.png
+phase1*.log
+phase1_constant_ppo.zip
+phase2*.log
+phase2_adaptive_ppo.zip
+phase2_pareto.png
+phase2_trajectory.png
+phase2_sweep_cache.json
+phase3*.log
+phase3_adaptive_ppo.zip
+phase3_ood.png

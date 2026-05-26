@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Phase 10 / V2 — Adaptive CBF visualization</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #1a1d26;
+    --text: #d8dce4;
+    --muted: #8a93a8;
+    --accent: #6fb3ff;
+    --collide: #ff6b6b;
+    --reach: #69d57a;
+    --trivial: #ffd166;
+    --conservative: #b18bff;
+    --custom: #6fb3ff;
+    --adaptive: #69d57a;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 16px;
+  }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  .sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(820px, 1fr) 320px;
+    gap: 12px;
+  }
+  .panel {
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+  .tab {
+    padding: 6px 12px; border-radius: 4px;
+    background: #2a2f3d; color: var(--text);
+    cursor: pointer; font-size: 13px; border: none;
+  }
+  .tab.active { background: var(--accent); color: #000; }
+  svg { background: #0a0c12; border-radius: 4px; display: block; }
+  .control-row {
+    display: flex; align-items: center; gap: 8px;
+    margin: 6px 0; font-size: 13px;
+  }
+  .control-row label { width: 100px; color: var(--muted); }
+  .strat-checkbox { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+  .strat-color { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+  input[type=range] { flex: 1; }
+  .value { color: var(--accent); font-variant-numeric: tabular-nums; width: 50px; text-align: right; }
+  button.action {
+    padding: 6px 14px; border-radius: 4px;
+    background: var(--accent); color: #000; border: none;
+    cursor: pointer; font-weight: 600; font-size: 13px;
+    margin-right: 6px;
+  }
+  button.action.secondary { background: #2a2f3d; color: var(--text); }
+  .metrics { font-size: 12px; line-height: 1.6; font-variant-numeric: tabular-nums; }
+  .metrics .row { display: flex; justify-content: space-between; }
+  .metrics .name { color: var(--muted); }
+  .metrics .outcome.reach { color: var(--reach); }
+  .metrics .outcome.collide { color: var(--collide); }
+  .metrics .outcome.timeout { color: var(--muted); }
+  .legend { display: flex; gap: 16px; font-size: 12px; margin-top: 6px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .explain {
+    font-size: 12px; line-height: 1.55; color: var(--muted);
+    background: #14171f; padding: 10px; border-radius: 6px;
+    margin-top: 10px;
+  }
+  .explain b { color: var(--text); }
+  .inset-canvas { background: #0a0c12; border-radius: 4px; margin-top: 8px; }
+  .section-title { font-size: 13px; color: var(--text); margin: 12px 0 6px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Phase 10 / V2 — adaptive CBF visualization</h1>
+<div class="sub">
+  Single-integrator + closed-form CBF (same math as <code>cbf_action_term._closed_form_cbf_batched</code>).
+  Tweak (φ, α) per strategy; see if adaptation buys you anything on the V2 eval scenes.
+</div>
+
+<div class="layout">
+
+  <div class="panel">
+    <div class="tabs" id="tabs"></div>
+    <svg id="scene" width="800" height="450" viewBox="0 0 800 450"></svg>
+    <div class="legend">
+      <span class="legend-item"><span class="strat-color" style="background:var(--trivial)"></span> trivial (φ=0, α=2.5)</span>
+      <span class="legend-item"><span class="strat-color" style="background:var(--conservative)"></span> conservative (φ=1, α=2)</span>
+      <span class="legend-item"><span class="strat-color" style="background:var(--custom)"></span> custom (sliders)</span>
+      <span class="legend-item"><span class="strat-color" style="background:var(--adaptive)"></span> adaptive (heuristic)</span>
+    </div>
+    <div class="section-title">optimal-φ heatmap over (x, y)</div>
+    <div class="sub" style="margin-bottom:6px">
+      For each point in the scene, the value below is the lowest fixed φ that keeps
+      a robot moving toward the goal *safely* (no CBF violation). Higher value = scene
+      requires more margin at this position. Flat heatmap = a single fixed φ suffices.
+      Strong gradient = adaptation should help.
+    </div>
+    <svg id="heatmap" width="800" height="200" viewBox="0 0 800 200" class="inset-canvas"></svg>
+  </div>
+
+  <div class="panel">
+    <div class="section-title">strategies</div>
+    <label class="strat-checkbox">
+      <input type="checkbox" id="strat-trivial" checked>
+      <span class="strat-color" style="background:var(--trivial)"></span>
+      trivial — (0, 2.5)
+    </label>
+    <label class="strat-checkbox">
+      <input type="checkbox" id="strat-conservative" checked>
+      <span class="strat-color" style="background:var(--conservative)"></span>
+      conservative — (1, 2)
+    </label>
+    <label class="strat-checkbox">
+      <input type="checkbox" id="strat-custom">
+      <span class="strat-color" style="background:var(--custom)"></span>
+      custom (sliders)
+    </label>
+    <label class="strat-checkbox">
+      <input type="checkbox" id="strat-adaptive" checked>
+      <span class="strat-color" style="background:var(--adaptive)"></span>
+      adaptive (heuristic)
+    </label>
+
+    <div class="section-title">custom (φ, α)</div>
+    <div class="control-row">
+      <label>φ</label>
+      <input type="range" id="phi" min="0" max="1" step="0.01" value="0.5">
+      <span class="value" id="phi-v">0.50</span>
+    </div>
+    <div class="control-row">
+      <label>α</label>
+      <input type="range" id="alpha" min="0.2" max="4" step="0.05" value="2.5">
+      <span class="value" id="alpha-v">2.50</span>
+    </div>
+
+    <div class="section-title">u_nom</div>
+    <div class="control-row">
+      <label>v_max (m/s)</label>
+      <input type="range" id="vmax" min="0.5" max="2.5" step="0.05" value="1.5">
+      <span class="value" id="vmax-v">1.50</span>
+    </div>
+    <div class="control-row">
+      <label>K_p</label>
+      <input type="range" id="kp" min="0.2" max="3" step="0.05" value="1.0">
+      <span class="value" id="kp-v">1.00</span>
+    </div>
+
+    <div class="section-title">run</div>
+    <button class="action" id="play">▶ Play</button>
+    <button class="action secondary" id="reset">⟲ Reset</button>
+
+    <div class="section-title">outcomes</div>
+    <div class="metrics" id="metrics"></div>
+
+    <div class="explain">
+      <b>What you're looking at.</b> CBF math: grad_h · u ≥ φ − α·h. Higher φ pushes the
+      robot away from h=0 (extra margin); higher α relaxes the constraint as h grows
+      (less intervention far from obstacles).<br><br>
+      <b>What to look for.</b><br>
+      • If <i>trivial</i> collides on a scene but <i>conservative</i> reaches → safety is
+      gated by (φ, α) — adaptation has room to add value.<br>
+      • If <i>conservative</i> reaches but <i>adaptive</i> is faster → adaptation
+      contributes value by being aggressive in open space.<br>
+      • If <i>adaptive</i> matches <i>conservative</i> on time-to-goal but
+      <i>conservative</i> beats <i>trivial</i> → adaptation isn't pulling its weight
+      on this scene; the scene only needs "be conservative".<br>
+      • Heatmap below: <i>flat</i> = scene doesn't need adaptation; <i>strong gradient</i>
+      = a per-state (φ, α) policy can do strictly better than any fixed one.
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+// SCENES (exact obstacle layouts from cbf_adaptive_env_cfg.py SCENES_V2)
+// ============================================================================
+const SCENES = {
+  "E1 GAP": {
+    obstacles: [[3.5, -1.0, 0.5], [3.5, 1.0, 0.5]],
+    goal: [7.0, 0.0], start: [0.0, 0.0],
+  },
+  "E2 SLALOM": {
+    obstacles: [[2.0, 0.7, 0.5], [4.0, -0.7, 0.5], [5.5, 0.7, 0.5]],
+    goal: [7.0, 0.0], start: [0.0, 0.0],
+  },
+  "E3 WALL": {
+    obstacles: [
+      [2.5,  1.8, 0.5], [2.5,  1.0, 0.5],
+      [2.5, -1.0, 0.5], [2.5, -1.8, 0.5],
+      [4.5,  0.0, 0.5],
+    ],
+    goal: [7.0, 0.0], start: [0.0, 0.0],
+  },
+  "E4 FIELD": {
+    obstacles: [
+      [2.0, 0.8, 0.4], [2.5, -0.7, 0.4], [3.5, 0.0, 0.4],
+      [4.0, -1.0, 0.4], [4.5, 1.0, 0.4],
+      [5.0, -0.4, 0.4], [5.5, 0.6, 0.4],
+    ],
+    goal: [7.0, 0.0], start: [0.0, 0.0],
+  },
+};
+const R_ROBOT = 0.35;
+const DT = 0.02;
+const GOAL_TOL = 0.4;
+const MAX_STEPS = 800;
+const H_LAMBDA = 1.0;
+const H_GAMMA = 2.0;
+
+// ============================================================================
+// COORDINATE TRANSFORM (world meters -> SVG pixels)
+// ============================================================================
+//   World x in [-0.5, 7.5] mapped to SVG x in [40, 760] (720 px wide)
+//   World y in [-2.5, 2.5] mapped to SVG y in [50, 400] (350 px tall, flipped)
+const VIEW = { w0: -0.5, w1: 7.5, h0: -2.5, h1: 2.5,
+               px0: 40, px1: 760, py0: 50, py1: 400 };
+function w2p(x, y) {
+  const px = VIEW.px0 + (x - VIEW.w0) / (VIEW.w1 - VIEW.w0) * (VIEW.px1 - VIEW.px0);
+  const py = VIEW.py1 - (y - VIEW.h0) / (VIEW.h1 - VIEW.h0) * (VIEW.py1 - VIEW.py0);
+  return [px, py];
+}
+function pxPerM() {
+  return (VIEW.px1 - VIEW.px0) / (VIEW.w1 - VIEW.w0);
+}
+
+// ============================================================================
+// PHYSICS (single integrator + closed-form multi-obstacle CBF)
+// ============================================================================
+// Returns {sdf, h_smooth, gradSdf, gEff} for one state vs all obstacles.
+// Mirrors _compute_sdf_smooth in cbf_action_term.py.
+function sdfSmooth(pos, obstacles) {
+  let best = Infinity, bestI = 0;
+  for (let i = 0; i < obstacles.length; i++) {
+    const [ox, oy, r] = obstacles[i];
+    const dx = pos[0] - ox, dy = pos[1] - oy;
+    const d = Math.hypot(dx, dy);
+    const h = d - (r + R_ROBOT);
+    if (h < best) { best = h; bestI = i; }
+  }
+  const [ox, oy] = obstacles[bestI];
+  const dx = pos[0] - ox, dy = pos[1] - oy;
+  const d = Math.hypot(dx, dy) || 1e-6;
+  const grad = [dx / d, dy / d];                 // unit, points away from obstacle
+  const expt = Math.exp(-H_GAMMA * best);
+  const hSmooth = H_LAMBDA * (1 - expt);
+  const gEff   = H_LAMBDA * H_GAMMA * expt;
+  return { sdf: best, hSmooth, grad, gEff };
+}
+
+// closed-form CBF projection (matches _closed_form_cbf_batched).
+function projectCBF(uNom, grad, rhsUnit, vmax) {
+  const dot = uNom[0]*grad[0] + uNom[1]*grad[1];
+  const def = rhsUnit - dot;
+  let v = uNom.slice();
+  if (def > 0) {
+    v = [uNom[0] + def*grad[0], uNom[1] + def*grad[1]];
+  }
+  const n = Math.hypot(v[0], v[1]);
+  if (n > vmax) { v = [v[0]*vmax/n, v[1]*vmax/n]; }
+  return v;
+}
+
+// One physics step. Returns {pos, sdf, intervention, terminate}.
+function stepOnce(pos, goal, obstacles, phi, alpha, vmax, kp) {
+  const sdfRes = sdfSmooth(pos, obstacles);
+  const err = [goal[0] - pos[0], goal[1] - pos[1]];
+  let uNom = [kp*err[0], kp*err[1]];
+  const nNom = Math.hypot(uNom[0], uNom[1]) || 1e-9;
+  if (nNom > vmax) uNom = [uNom[0]*vmax/nNom, uNom[1]*vmax/nNom];
+  const rhsSmooth = phi - alpha * sdfRes.hSmooth;
+  const rhsUnit = rhsSmooth / Math.max(sdfRes.gEff, 1e-6);
+  const uSafe = projectCBF(uNom, sdfRes.grad, rhsUnit, vmax);
+  const next = [pos[0] + uSafe[0]*DT, pos[1] + uSafe[1]*DT];
+  const intervention = Math.hypot(uSafe[0]-uNom[0], uSafe[1]-uNom[1]);
+  // collision detection: robot body intersects obstacle (dist < r_obstacle, NOT r_safe)
+  let collided = false;
+  for (const [ox, oy, r] of obstacles) {
+    if (Math.hypot(next[0]-ox, next[1]-oy) < r) { collided = true; break; }
+  }
+  const reached = Math.hypot(next[0]-goal[0], next[1]-goal[1]) < GOAL_TOL;
+  return { pos: next, sdf: sdfRes.sdf, intervention, collided, reached };
+}
+
+// Full rollout for one strategy.
+function simulate(scene, strategyFn, params) {
+  const { obstacles, goal, start } = scene;
+  const traj = [start.slice()];
+  let intervSum = 0, minSdf = Infinity;
+  let pos = start.slice();
+  let outcome = "timeout", finalStep = MAX_STEPS;
+  for (let step = 0; step < MAX_STEPS; step++) {
+    const sdfRes = sdfSmooth(pos, obstacles);
+    const [phi, alpha] = strategyFn(sdfRes.sdf, pos, scene);
+    const r = stepOnce(pos, goal, obstacles, phi, alpha, params.vmax, params.kp);
+    pos = r.pos;
+    traj.push(pos.slice());
+    intervSum += r.intervention;
+    if (r.sdf < minSdf) minSdf = r.sdf;
+    if (r.collided) { outcome = "collide"; finalStep = step; break; }
+    if (r.reached)  { outcome = "reach";   finalStep = step; break; }
+  }
+  return {
+    traj, outcome, finalStep,
+    interventionMean: intervSum / Math.max(finalStep+1, 1),
+    minSdf,
+    timeS: (finalStep+1) * DT,
+  };
+}
+
+// ============================================================================
+// STRATEGIES
+// ============================================================================
+const STRATS = {
+  trivial:      { name: "trivial",      color: "#ffd166", fn: () => [0.0, 2.5] },
+  conservative: { name: "conservative", color: "#b18bff", fn: () => [1.0, 2.0] },
+  custom:       { name: "custom",       color: "#6fb3ff",
+                  fn: () => [parseFloat(document.getElementById("phi").value),
+                             parseFloat(document.getElementById("alpha").value)] },
+  // Adaptive heuristic: as SDF shrinks, push φ up and α down (more margin,
+  // less permissive). In open space (sdf > 1.5) it's effectively (0, 4).
+  // This is just a hand-tuned demo, NOT what the trained PPO policy does --
+  // but it illustrates what shape an adaptive policy SHOULD have.
+  adaptive: { name: "adaptive", color: "#69d57a",
+              fn: (sdf) => {
+                const phi   = Math.max(0, Math.min(1.0, 0.9 - 0.5 * sdf));
+                const alpha = Math.max(0.5, Math.min(4.0, 1.0 + 1.5 * sdf));
+                return [phi, alpha];
+              } },
+};
+
+// ============================================================================
+// RENDER
+// ============================================================================
+const tabsEl = document.getElementById("tabs");
+const sceneEl = document.getElementById("scene");
+const heatEl = document.getElementById("heatmap");
+const metricsEl = document.getElementById("metrics");
+let currentScene = "E1 GAP";
+let trajectories = {};        // strat key -> result
+let animTimer = null;
+let animStep = 0;
+let animTrails = {};          // strat key -> SVG path
+
+function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+
+function drawScene() {
+  clear(sceneEl);
+  const ns = "http://www.w3.org/2000/svg";
+  const sc = SCENES[currentScene];
+
+  // grid
+  const grid = document.createElementNS(ns, "g");
+  for (let x = 0; x <= 7; x++) {
+    const [p1] = [w2p(x, -2.5)]; const p2 = w2p(x, 2.5);
+    const ln = document.createElementNS(ns, "line");
+    ln.setAttribute("x1", p1[0]); ln.setAttribute("y1", p1[1]);
+    ln.setAttribute("x2", p2[0]); ln.setAttribute("y2", p2[1]);
+    ln.setAttribute("stroke", "#222531"); ln.setAttribute("stroke-width", "1");
+    grid.appendChild(ln);
+  }
+  for (let y = -2; y <= 2; y++) {
+    const p1 = w2p(-0.5, y); const p2 = w2p(7.5, y);
+    const ln = document.createElementNS(ns, "line");
+    ln.setAttribute("x1", p1[0]); ln.setAttribute("y1", p1[1]);
+    ln.setAttribute("x2", p2[0]); ln.setAttribute("y2", p2[1]);
+    ln.setAttribute("stroke", "#222531"); ln.setAttribute("stroke-width", "1");
+    grid.appendChild(ln);
+  }
+  sceneEl.appendChild(grid);
+
+  // obstacles: physical body (dark) + safe-radius ring (faint)
+  for (const [ox, oy, r] of sc.obstacles) {
+    const [cx, cy] = w2p(ox, oy);
+    const rPx = r * pxPerM();
+    const rSafePx = (r + R_ROBOT) * pxPerM();
+    const safeRing = document.createElementNS(ns, "circle");
+    safeRing.setAttribute("cx", cx); safeRing.setAttribute("cy", cy);
+    safeRing.setAttribute("r", rSafePx);
+    safeRing.setAttribute("fill", "rgba(255,107,107,0.06)");
+    safeRing.setAttribute("stroke", "rgba(255,107,107,0.25)");
+    safeRing.setAttribute("stroke-dasharray", "3,3");
+    sceneEl.appendChild(safeRing);
+    const body = document.createElementNS(ns, "circle");
+    body.setAttribute("cx", cx); body.setAttribute("cy", cy);
+    body.setAttribute("r", rPx);
+    body.setAttribute("fill", "#3a2030");
+    body.setAttribute("stroke", "#ff6b6b");
+    body.setAttribute("stroke-width", "1.5");
+    sceneEl.appendChild(body);
+  }
+
+  // start and goal
+  const [sx, sy] = w2p(sc.start[0], sc.start[1]);
+  const [gx, gy] = w2p(sc.goal[0], sc.goal[1]);
+  const startCircle = document.createElementNS(ns, "circle");
+  startCircle.setAttribute("cx", sx); startCircle.setAttribute("cy", sy);
+  startCircle.setAttribute("r", 8); startCircle.setAttribute("fill", "#6fb3ff");
+  sceneEl.appendChild(startCircle);
+  const startLabel = document.createElementNS(ns, "text");
+  startLabel.setAttribute("x", sx); startLabel.setAttribute("y", sy + 24);
+  startLabel.setAttribute("text-anchor", "middle"); startLabel.setAttribute("fill", "#6fb3ff");
+  startLabel.setAttribute("font-size", "11"); startLabel.textContent = "start";
+  sceneEl.appendChild(startLabel);
+  const goalCircle = document.createElementNS(ns, "circle");
+  goalCircle.setAttribute("cx", gx); goalCircle.setAttribute("cy", gy);
+  goalCircle.setAttribute("r", GOAL_TOL * pxPerM());
+  goalCircle.setAttribute("fill", "rgba(105,213,122,0.18)");
+  goalCircle.setAttribute("stroke", "#69d57a"); goalCircle.setAttribute("stroke-width", "1.5");
+  sceneEl.appendChild(goalCircle);
+  const goalLabel = document.createElementNS(ns, "text");
+  goalLabel.setAttribute("x", gx); goalLabel.setAttribute("y", gy + 28);
+  goalLabel.setAttribute("text-anchor", "middle"); goalLabel.setAttribute("fill", "#69d57a");
+  goalLabel.setAttribute("font-size", "11"); goalLabel.textContent = "goal";
+  sceneEl.appendChild(goalLabel);
+
+  // trajectory placeholders (filled by drawTraj during animation / final render)
+  for (const key of Object.keys(STRATS)) {
+    const path = document.createElementNS(ns, "polyline");
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", STRATS[key].color);
+    path.setAttribute("stroke-width", "2");
+    path.setAttribute("opacity", "0.85");
+    path.setAttribute("id", `traj-${key}`);
+    sceneEl.appendChild(path);
+    const dot = document.createElementNS(ns, "circle");
+    dot.setAttribute("r", "5");
+    dot.setAttribute("fill", STRATS[key].color);
+    dot.setAttribute("stroke", "#000");
+    dot.setAttribute("stroke-width", "1");
+    dot.setAttribute("id", `dot-${key}`);
+    dot.setAttribute("opacity", "0");
+    sceneEl.appendChild(dot);
+  }
+}
+
+function drawTraj(key, traj, upTo) {
+  const path = document.getElementById(`traj-${key}`);
+  if (!path) return;
+  const dot = document.getElementById(`dot-${key}`);
+  const limit = Math.min(upTo, traj.length);
+  const pts = [];
+  for (let i = 0; i < limit; i++) {
+    const [px, py] = w2p(traj[i][0], traj[i][1]);
+    pts.push(`${px.toFixed(1)},${py.toFixed(1)}`);
+  }
+  path.setAttribute("points", pts.join(" "));
+  if (limit > 0) {
+    const [px, py] = w2p(traj[limit-1][0], traj[limit-1][1]);
+    dot.setAttribute("cx", px); dot.setAttribute("cy", py);
+    dot.setAttribute("opacity", "1");
+  } else {
+    dot.setAttribute("opacity", "0");
+  }
+}
+
+function activeStrats() {
+  const out = [];
+  for (const key of Object.keys(STRATS)) {
+    if (document.getElementById(`strat-${key}`).checked) out.push(key);
+  }
+  return out;
+}
+
+function runAll() {
+  const sc = SCENES[currentScene];
+  const vmax = parseFloat(document.getElementById("vmax").value);
+  const kp   = parseFloat(document.getElementById("kp").value);
+  trajectories = {};
+  for (const key of activeStrats()) {
+    trajectories[key] = simulate(sc, STRATS[key].fn, { vmax, kp });
+  }
+  drawScene();
+  updateMetrics();
+}
+
+function updateMetrics() {
+  const rows = [];
+  for (const key of Object.keys(STRATS)) {
+    const res = trajectories[key];
+    const enabled = document.getElementById(`strat-${key}`).checked;
+    if (!enabled || !res) continue;
+    const ttg = res.outcome === "reach" ? `${res.timeS.toFixed(2)} s` : "—";
+    const cls = res.outcome === "reach" ? "reach"
+              : res.outcome === "collide" ? "collide" : "timeout";
+    rows.push(`
+      <div class="row">
+        <span class="name"><span class="strat-color" style="background:${STRATS[key].color}"></span> ${STRATS[key].name}</span>
+        <span class="outcome ${cls}">${res.outcome}</span>
+      </div>
+      <div class="row" style="font-size:11px; margin-bottom:6px; padding-left:18px">
+        <span class="name">t→goal</span><span>${ttg}</span>
+      </div>
+      <div class="row" style="font-size:11px; margin-bottom:6px; padding-left:18px">
+        <span class="name">∫intervention</span><span>${res.interventionMean.toFixed(3)} m/s</span>
+      </div>
+      <div class="row" style="font-size:11px; margin-bottom:6px; padding-left:18px">
+        <span class="name">min sdf</span><span>${res.minSdf.toFixed(2)} m</span>
+      </div>
+    `);
+  }
+  metricsEl.innerHTML = rows.join("") || "<div class='sub'>no strategy selected</div>";
+}
+
+function animate() {
+  if (animTimer) { clearInterval(animTimer); animTimer = null; }
+  animStep = 0;
+  // pre-compute results so animation just unrolls the trajectories
+  runAll();
+  // clear current paths
+  for (const key of Object.keys(STRATS)) drawTraj(key, [], 0);
+  const stepsPerFrame = 4;
+  animTimer = setInterval(() => {
+    animStep += stepsPerFrame;
+    let stillRunning = false;
+    for (const key of activeStrats()) {
+      const res = trajectories[key];
+      if (!res) continue;
+      if (animStep < res.traj.length) stillRunning = true;
+      drawTraj(key, res.traj, animStep);
+    }
+    if (!stillRunning) { clearInterval(animTimer); animTimer = null; }
+  }, 40);
+}
+
+function reset() {
+  if (animTimer) { clearInterval(animTimer); animTimer = null; }
+  trajectories = {};
+  drawScene();
+  metricsEl.innerHTML = "<div class='sub'>click ▶ Play to simulate</div>";
+}
+
+// ============================================================================
+// HEATMAP: at each (x, y) the minimum φ at which a robot moving toward goal
+// from that point would not violate the CBF on the next step (for α fixed at
+// nominal 2.5 and v_max=1.5). High heat = tight margin needed; low = open.
+// ============================================================================
+function drawHeatmap() {
+  clear(heatEl);
+  const ns = "http://www.w3.org/2000/svg";
+  const sc = SCENES[currentScene];
+  // remap to the smaller heatmap viewport (800 x 200)
+  const HMW = 800, HMH = 200;
+  const xMin = -0.5, xMax = 7.5, yMin = -2.5, yMax = 2.5;
+  const NX = 80, NY = 20;  // grid resolution
+  const cellW = HMW / NX, cellH = HMH / NY;
+  const goal = sc.goal;
+  const vmax = 1.5;
+  const alphaFixed = 2.5;
+  for (let iy = 0; iy < NY; iy++) {
+    for (let ix = 0; ix < NX; ix++) {
+      const x = xMin + (ix + 0.5) * (xMax - xMin) / NX;
+      const y = yMin + (iy + 0.5) * (yMax - yMin) / NY;
+      const sdfRes = sdfSmooth([x, y], sc.obstacles);
+      // skip cells inside obstacles
+      if (sdfRes.sdf <= -R_ROBOT) { continue; }
+      const err = [goal[0] - x, goal[1] - y];
+      const n = Math.hypot(err[0], err[1]) || 1e-9;
+      let uNom = n > vmax ? [err[0]*vmax/n, err[1]*vmax/n] : err;
+      const dot = uNom[0]*sdfRes.grad[0] + uNom[1]*sdfRes.grad[1];
+      // CBF: grad·u >= phi - alpha*h. min phi at which constraint is tight:
+      //   phi_min = grad·u + alpha*h  (clipped to [0, 1])
+      const phiMin = Math.max(0, Math.min(1, dot + alphaFixed * sdfRes.hSmooth));
+      // when phi_min is small, the scene is "easy" here; when large, conservative
+      const heat = phiMin;     // 0..1
+      const px = (x - xMin) / (xMax - xMin) * HMW;
+      const py = HMH - (y - yMin) / (yMax - yMin) * HMH;
+      const rect = document.createElementNS(ns, "rect");
+      rect.setAttribute("x", px - cellW/2);
+      rect.setAttribute("y", py - cellH/2);
+      rect.setAttribute("width", cellW + 1);
+      rect.setAttribute("height", cellH + 1);
+      const r_ = Math.round(15 + heat * 200);
+      const g_ = Math.round(60 - heat * 30);
+      const b_ = Math.round(120 - heat * 80);
+      rect.setAttribute("fill", `rgb(${r_},${g_},${b_})`);
+      heatEl.appendChild(rect);
+    }
+  }
+  // overlay obstacles on heatmap too
+  for (const [ox, oy, r] of sc.obstacles) {
+    const px = (ox - xMin) / (xMax - xMin) * HMW;
+    const py = HMH - (oy - yMin) / (yMax - yMin) * HMH;
+    const rPx = r / (xMax - xMin) * HMW;
+    const c = document.createElementNS(ns, "circle");
+    c.setAttribute("cx", px); c.setAttribute("cy", py); c.setAttribute("r", rPx);
+    c.setAttribute("fill", "#0a0c12"); c.setAttribute("stroke", "#ff6b6b");
+    c.setAttribute("stroke-width", "1");
+    heatEl.appendChild(c);
+  }
+  // colorbar legend
+  const lo = document.createElementNS(ns, "text");
+  lo.setAttribute("x", 8); lo.setAttribute("y", 16);
+  lo.setAttribute("fill", "#8a93a8"); lo.setAttribute("font-size", "10");
+  lo.textContent = "open (no margin needed, dark) → tight (high φ needed, bright red)";
+  heatEl.appendChild(lo);
+}
+
+// ============================================================================
+// UI WIRING
+// ============================================================================
+function buildTabs() {
+  for (const name of Object.keys(SCENES)) {
+    const b = document.createElement("button");
+    b.className = "tab" + (name === currentScene ? " active" : "");
+    b.textContent = name;
+    b.onclick = () => {
+      currentScene = name;
+      document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.textContent === name));
+      reset();
+      drawHeatmap();
+    };
+    tabsEl.appendChild(b);
+  }
+}
+for (const id of ["phi", "alpha", "vmax", "kp"]) {
+  const inp = document.getElementById(id);
+  const out = document.getElementById(`${id}-v`);
+  inp.oninput = () => { out.textContent = parseFloat(inp.value).toFixed(2); };
+}
+for (const key of Object.keys(STRATS)) {
+  document.getElementById(`strat-${key}`).onchange = () => {
+    if (Object.keys(trajectories).length) updateMetrics();
+  };
+}
+document.getElementById("play").onclick = animate;
+document.getElementById("reset").onclick = reset;
+
+// init
+buildTabs();
+reset();
+drawHeatmap();
+</script>
+
+</body>
+</html>

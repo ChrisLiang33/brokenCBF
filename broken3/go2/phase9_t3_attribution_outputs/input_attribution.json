@@ -1,0 +1,51 @@
+{
+  "task": "Isaac-CBF-Adaptive-Go2-RMAHistory-v0",
+  "teacher_ckpt": "/home/chrisliang/Desktop/cbf_rl_mvp/go2/phase9_rma_history_teacher_outputs/rsl_rl/model_final.pt",
+  "rollout_steps": 800,
+  "num_envs": 256,
+  "ridge_alpha": 1.0,
+  "n_samples": 204800,
+  "q1": {
+    "phi_std": 0.0839475616812706,
+    "phi_range_pct": 100.0,
+    "alpha_std": 1.194284439086914,
+    "alpha_range_pct": 105.26315789473685,
+    "verdict": "BOTH adapt"
+  },
+  "q2": {
+    "phi": {
+      "r2_full": 0.7275765399534091,
+      "per_group": {
+        "z": {
+          "marginal": 0.1684791000435858,
+          "unique": 0.002396313248497539
+        },
+        "proprio": {
+          "marginal": 0.6808652317661114,
+          "unique": 0.508117119712999
+        },
+        "lidar": {
+          "marginal": 0.06300268113681995,
+          "unique": 0.044442931718127854
+        }
+      }
+    },
+    "alpha": {
+      "r2_full": 0.7755259343852928,
+      "per_group": {
+        "z": {
+          "marginal": 0.29385446750376787,
+          "unique": 0.00756120813140182
+        },
+        "proprio": {
+          "marginal": 0.5699777108352108,
+          "unique": 0.11805470082843661
+        },
+        "lidar": {
+          "marginal": 0.4718244430606827,
+          "unique": 0.19745382793462263
+        }
+      }
+    }
+  }
+}

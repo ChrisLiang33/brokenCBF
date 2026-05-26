@@ -1,0 +1,74 @@
+{
+  "learned": [
+    {
+      "disturbance_force": 0.0,
+      "n": 64,
+      "collision_rate": 0.0,
+      "reach_rate": 0.9375,
+      "fall_rate": 0.0,
+      "min_h_mean": 0.280331015586853,
+      "intervention_mean": 256.11529541015625
+    },
+    {
+      "disturbance_force": 10.0,
+      "n": 64,
+      "collision_rate": 0.0,
+      "reach_rate": 0.875,
+      "fall_rate": 0.0,
+      "min_h_mean": 0.2529449462890625,
+      "intervention_mean": 257.95587158203125
+    },
+    {
+      "disturbance_force": 20.0,
+      "n": 64,
+      "collision_rate": 0.046875,
+      "reach_rate": 0.796875,
+      "fall_rate": 0.0,
+      "min_h_mean": 0.208592489361763,
+      "intervention_mean": 257.2720031738281
+    },
+    {
+      "disturbance_force": 30.0,
+      "n": 64,
+      "collision_rate": 0.296875,
+      "reach_rate": 0.609375,
+      "fall_rate": 0.0,
+      "min_h_mean": 0.10454608500003815,
+      "intervention_mean": 275.80889892578125
+    },
+    {
+      "disturbance_force": 40.0,
+      "n": 64,
+      "collision_rate": 0.3125,
+      "reach_rate": 0.46875,
+      "fall_rate": 0.0,
+      "min_h_mean": 0.08582872152328491,
+      "intervention_mean": 300.83856201171875
+    },
+    {
+      "disturbance_force": 50.0,
+      "n": 64,
+      "collision_rate": 0.640625,
+      "reach_rate": 0.296875,
+      "fall_rate": 0.0,
+      "min_h_mean": 0.03531118854880333,
+      "intervention_mean": 295.98114013671875
+    },
+    {
+      "disturbance_force": 60.0,
+      "n": 64,
+      "collision_rate": 0.53125,
+      "reach_rate": 0.265625,
+      "fall_rate": 0.0,
+      "min_h_mean": 0.11016955226659775,
+      "intervention_mean": 240.69622802734375
+    }
+  ],
+  "verdict": "REVIEW",
+  "per_d_pass": [
+    false,
+    false,
+    true
+  ],
+  "train_seconds": 346.7104535102844
+}

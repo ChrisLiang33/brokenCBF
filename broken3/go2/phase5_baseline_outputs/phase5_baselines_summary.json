@@ -1,0 +1,29 @@
+[
+  {
+    "baseline": "B0",
+    "config": "alpha=1.0, phi=0",
+    "safe": false,
+    "worst_coll": 0.953125,
+    "worst_reach": 0.82421875,
+    "mean_int": 582.5747528076172,
+    "mean_jitter": 0.0009132402774412185
+  },
+  {
+    "baseline": "B1",
+    "config": "alpha=1.0, phi=1.0",
+    "safe": false,
+    "worst_coll": 0.0390625,
+    "worst_reach": 0.0,
+    "mean_int": 2073.5540161132812,
+    "mean_jitter": 0.0022588816354982555
+  },
+  {
+    "baseline": "B2",
+    "config": "alpha=1.0, eps0=1.0, lambda=0.5  (phi_max=1.00)",
+    "safe": false,
+    "worst_coll": 0.2109375,
+    "worst_reach": 0.86328125,
+    "mean_int": 928.5995483398438,
+    "mean_jitter": 0.0034796521649695933
+  }
+]

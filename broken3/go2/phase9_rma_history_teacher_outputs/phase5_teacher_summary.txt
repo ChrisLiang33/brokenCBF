@@ -1,0 +1,13 @@
+Task: Isaac-CBF-Adaptive-Go2-RMAHistory-v0
+Iterations: 3000
+Train seconds: 3319
+Verdict: REVIEW -- teacher flat
+
+ d (N)   coll  reach   fall     int   phi_mean  phi_std  alpha_mean  alpha_std
+   0.0   0.00   0.57   0.05    1026     +0.985    0.068       1.738      1.160
+  15.0   0.05   0.60   0.09    1033     +0.982    0.079       1.744      1.205
+  30.0   0.18   0.63   0.31     985     +0.982    0.077       1.804      1.228
+  45.0   0.39   0.60   0.57     912     +0.975    0.103       1.832      1.231
+
+phi_range across d:   0.010 (1.0% of bound width)
+alpha_range across d: 0.094 (2.5% of bound width)

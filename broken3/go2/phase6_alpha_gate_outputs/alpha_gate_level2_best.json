@@ -1,0 +1,11 @@
+{
+  "level": 2,
+  "tag": "SAFE",
+  "alpha": 2.0,
+  "collision_rate": 0.0,
+  "reach_rate": 1.0,
+  "fall_rate": 0.0,
+  "stuck_rate": 0.0,
+  "intervention_mean": 464.6002197265625,
+  "tracking_err_mean": 0.1423699462890625
+}

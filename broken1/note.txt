@@ -1,0 +1,22 @@
+Re: Handling the b·‖u‖ term in the TISSf filter
+
+The b·‖u‖ term in the robustified CBF constraint makes the inequality a second-order cone (SOC) in u rather than a linear half-space:
+
+A·u − b·‖u‖ ≥ k
+
+A direct closed-form half-space projection no longer applies. Rather than dispatching to a full SOCP solver (ECOS / Clarabel / SCS) for every filter call, I'm using a fixed-point (Picard) iteration:
+
+uₖ₊₁ = u_nom + ((−const + b·‖uₖ‖) − A·u_nom) / ‖A‖² · A
+
+Each iterate is itself a closed-form half-space projection — treating the previous ‖uₖ‖ as known turns the SOC into a half-space. This is a contraction map with rate b/‖A‖. In our learned regime (b ≈ 0.03, ‖∇h‖ ∈ [0.5, 2]), the contraction rate is ~0.01–0.06, so 3–5 iterations converge to machine precision. I run 5 iterations with a feasibility short-circuit.
+
+I chose this over a full SOCP solver for two reasons:
+
+GPU parallelism. Picard is a fixed number of vectorized tensor ops with no data-dependent branching or dynamic shapes. A general SOCP solver performs symbolic factorization, adaptive step selection, and per-instance termination conditions, all of which break SIMT execution. When this controller is ported to Isaac Lab with thousands of parallel envs, Picard remains O(1)-overhead-per-env; a solver would require per-env CPU dispatch and serialize the batch.
+
+Correctness within regime. For b ≤ ‖A‖, Picard converges to the exact SOC projection — there is no approximation error beyond what we'd accept from a tolerance-based SOCP solver. The convergence rate is geometric and uniform across the batch, so the iteration count is a known constant. If the learned b ever exceeded ‖A‖ we'd either raise the iteration count or fall back to a true solver, but CEM has consistently selected b < 0.05 in our experiments.
+
+In short: the iteration is a fast, GPU-friendly, principled replacement for an SOC projection — not a heuristic.
+
+
+

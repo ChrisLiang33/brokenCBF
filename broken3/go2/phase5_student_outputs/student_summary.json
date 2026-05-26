@@ -1,0 +1,18 @@
+{
+  "priv_names": [
+    "disturbance",
+    "friction",
+    "mass_delta",
+    "motor_strength"
+  ],
+  "r2_per_channel": [
+    0.942969799041748,
+    0.7087425589561462,
+    0.9134150743484497,
+    0.7223833799362183
+  ],
+  "mean_r2": 0.8218777179718018,
+  "n_samples": 506880,
+  "n_train": 430848,
+  "n_test": 76032
+}

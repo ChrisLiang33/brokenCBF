@@ -1,0 +1,13 @@
+Task: Isaac-CBF-Adaptive-Go2-UnifiedLidarSDFStuck-v0
+Iterations: 3000
+Train seconds: 2856
+Verdict: REVIEW -- teacher flat
+
+ d (N)   coll  reach   fall     int   phi_mean  phi_std  alpha_mean  alpha_std
+   0.0   0.03   0.89   0.01     889     +0.979    0.088       2.518      1.359
+  15.0   0.02   0.86   0.02     950     +0.974    0.100       2.234      1.345
+  30.0   0.08   0.70   0.11    1113     +0.959    0.128       1.858      1.275
+  45.0   0.16   0.60   0.50    1271     +0.928    0.175       1.603      1.189
+
+phi_range across d:   0.051 (5.1% of bound width)
+alpha_range across d: 0.916 (24.1% of bound width)

@@ -1,0 +1,62 @@
+{
+  "phi_span": 0.10649719834327698,
+  "alpha_span": 0.7417000532150269,
+  "teacher_phi_span": 0.14,
+  "teacher_alpha_span": 1.166,
+  "alpha_retention": 0.6361063921226646,
+  "verdict": "PASS -- deployed policy retains substantial adaptation",
+  "rows": [
+    {
+      "disturbance_force": 0.0,
+      "phi_mean": 0.4021563231945038,
+      "phi_std": 0.18431778252124786,
+      "alpha_mean": 2.7105538845062256,
+      "alpha_std": 0.9116259217262268,
+      "collision_rate": 0.0,
+      "reach_rate": 1.0,
+      "fall_rate": 0.0,
+      "intervention_mean": 514.3937377929688,
+      "dist_pred_mean": 4.746845722198486,
+      "dist_pred_err": 4.787446975708008
+    },
+    {
+      "disturbance_force": 15.0,
+      "phi_mean": 0.42863261699676514,
+      "phi_std": 0.19089286029338837,
+      "alpha_mean": 2.548224687576294,
+      "alpha_std": 0.9450328946113586,
+      "collision_rate": 0.0,
+      "reach_rate": 0.96875,
+      "fall_rate": 0.0,
+      "intervention_mean": 510.15057373046875,
+      "dist_pred_mean": 15.291213989257812,
+      "dist_pred_err": 2.1703641414642334
+    },
+    {
+      "disturbance_force": 30.0,
+      "phi_mean": 0.49667802453041077,
+      "phi_std": 0.2342781126499176,
+      "alpha_mean": 2.2437362670898438,
+      "alpha_std": 1.0529110431671143,
+      "collision_rate": 0.109375,
+      "reach_rate": 0.96875,
+      "fall_rate": 0.09375,
+      "intervention_mean": 620.9652709960938,
+      "dist_pred_mean": 29.800424575805664,
+      "dist_pred_err": 3.3513829708099365
+    },
+    {
+      "disturbance_force": 45.0,
+      "phi_mean": 0.5086535215377808,
+      "phi_std": 0.234994038939476,
+      "alpha_mean": 1.9688538312911987,
+      "alpha_std": 1.088799238204956,
+      "collision_rate": 0.390625,
+      "reach_rate": 0.953125,
+      "fall_rate": 0.171875,
+      "intervention_mean": 651.1864013671875,
+      "dist_pred_mean": 41.08041763305664,
+      "dist_pred_err": 4.952460765838623
+    }
+  ]
+}

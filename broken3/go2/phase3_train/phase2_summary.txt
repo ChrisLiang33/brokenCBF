@@ -1,0 +1,28 @@
+Task: Isaac-CBF-Adaptive-Go2-Phase3-v0
+Train range: [0.0, 45.0]
+Iterations: 500
+Train seconds: 0
+Verdict: REVIEW
+
+================================================================================================
+  PER-DISTURBANCE COMPARISON     learned (state-conditional) vs best safe fixed (at that d)
+================================================================================================
+   d (N) | LEARNED                          | BEST SAFE FIXED at this d                       
+         |   coll   reach      int   min_h |  (phi,alpha)   coll   reach      int
+  ----------------------------------------------------------------------------------------------
+     0.0 |  0.14    0.83      901   +0.01 | (0.0,1.0)     0.00    1.00      589   (Δint = +312)
+    15.0 |  0.44    0.89      844   +0.01 | (0.0,1.0)     0.67    0.97      600   (Δint = +244)
+    30.0 |  0.75    0.91      761   +0.00 | (0.0,1.0)     0.94    0.81      594   (Δint = +167)
+    45.0 |  0.94    0.72      652   -0.00 | (0.0,1.0)     0.97    0.39      604   (Δint = +48)
+================================================================================================
+
+POLICY-OUTPUT DIAGNOSTIC
+ d (N)    phi_mean   phi_std   alpha_mean  alpha_std
+   0.0      +0.249     0.417         1.97       1.83
+  15.0      +0.294     0.439         2.13       1.83
+  30.0      +0.322     0.449         2.14       1.82
+  45.0      +0.324     0.450         2.08       1.83
+
+across-d range:  phi_mean spans 0.075,  alpha_mean spans 0.172
+within-d spread: phi_std avg 0.439,   alpha_std avg 1.827
+collapsed: False

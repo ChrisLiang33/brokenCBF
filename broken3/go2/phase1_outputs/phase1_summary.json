@@ -1,0 +1,20 @@
+{
+  "ppo": {
+    "phi": 0.3482106924057007,
+    "alpha": 4.0,
+    "train_seconds": 66.15171790122986,
+    "collision_rate": 0.0,
+    "reach_rate": 1.0,
+    "min_h_mean": 0.0456307977437973,
+    "intervention_mean": 621.77099609375
+  },
+  "grid_best": {
+    "phi": 0.2,
+    "alpha": 2.5,
+    "n": 8,
+    "collision_rate": 0.0,
+    "reach_rate": 1.0,
+    "min_h_mean": 0.053122684359550476,
+    "intervention_mean": 538.7337646484375
+  }
+}
