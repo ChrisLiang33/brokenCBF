@@ -1,0 +1,127 @@
+{
+  "task": "Isaac-CBF-Go2-RMA-Layer3-RMAv11-v0",
+  "checkpoint": "/home/chrisliang/Desktop/safety-go2/IsaacLab/logs/rsl_rl/cbf_go2_teacher_rma/2026-05-20_11-43-29/model_2999.pt",
+  "n_envs": 256,
+  "n_rollout_steps": 50,
+  "priv_dim": 12,
+  "alpha_head": [
+    {
+      "feature": "friction",
+      "grad_abs_mean": 0.22668687999248505,
+      "grad_signed_mean": 0.14193570613861084,
+      "grad_rms": 0.35099485516548157,
+      "feature_scale": 0.2534821629524231,
+      "standardized_sensitivity": 0.05746108065343147
+    },
+    {
+      "feature": "base_mass",
+      "grad_abs_mean": 0.035964515060186386,
+      "grad_signed_mean": 0.017008082941174507,
+      "grad_rms": 0.055372271686792374,
+      "feature_scale": 1.1707336902618408,
+      "standardized_sensitivity": 0.04210486943488956
+    },
+    {
+      "feature": "|applied_force|",
+      "grad_abs_mean": 0.019633786752820015,
+      "grad_signed_mean": 1.4051950529392343e-05,
+      "grad_rms": 0.029465381056070328,
+      "feature_scale": 5.813539981842041,
+      "standardized_sensitivity": 0.11414180428247978
+    },
+    {
+      "feature": "|applied_torque|",
+      "grad_abs_mean": 0.0885435938835144,
+      "grad_signed_mean": 0.013765429146587849,
+      "grad_rms": 0.14095622301101685,
+      "feature_scale": 1.1474980115890503,
+      "standardized_sensitivity": 0.10160359792028117
+    },
+    {
+      "feature": "|com_offset|",
+      "grad_abs_mean": 2.577958106994629,
+      "grad_signed_mean": -0.9112805724143982,
+      "grad_rms": 3.961097240447998,
+      "feature_scale": 0.024994386360049248,
+      "standardized_sensitivity": 0.06443448094624493
+    },
+    {
+      "feature": "actuation_noise_sigma",
+      "grad_abs_mean": 0.705838143825531,
+      "grad_signed_mean": -0.05233640596270561,
+      "grad_rms": 1.0810556411743164,
+      "feature_scale": 0.008157595992088318,
+      "standardized_sensitivity": 0.005757942413134209
+    }
+  ],
+  "phi_head": [
+    {
+      "feature": "friction",
+      "grad_abs_mean": 0.44694074988365173,
+      "grad_signed_mean": 0.09976326674222946,
+      "grad_rms": 0.8017690181732178,
+      "feature_scale": 0.2534821629524231,
+      "standardized_sensitivity": 0.11329150799208598
+    },
+    {
+      "feature": "base_mass",
+      "grad_abs_mean": 0.10046830773353577,
+      "grad_signed_mean": 0.022875750437378883,
+      "grad_rms": 0.18606741726398468,
+      "feature_scale": 1.1707336902618408,
+      "standardized_sensitivity": 0.11762163266724457
+    },
+    {
+      "feature": "|applied_force|",
+      "grad_abs_mean": 0.05820054933428764,
+      "grad_signed_mean": -0.0051243542693555355,
+      "grad_rms": 0.10631444305181503,
+      "feature_scale": 5.813539981842041,
+      "standardized_sensitivity": 0.3383512205200514
+    },
+    {
+      "feature": "|applied_torque|",
+      "grad_abs_mean": 0.17998969554901123,
+      "grad_signed_mean": -0.005882388446480036,
+      "grad_rms": 0.2981559634208679,
+      "feature_scale": 1.1474980115890503,
+      "standardized_sensitivity": 0.20653781774900892
+    },
+    {
+      "feature": "|com_offset|",
+      "grad_abs_mean": 4.966378211975098,
+      "grad_signed_mean": -0.5157975554466248,
+      "grad_rms": 8.422237396240234,
+      "feature_scale": 0.024994386360049248,
+      "standardized_sensitivity": 0.12413157584023615
+    },
+    {
+      "feature": "actuation_noise_sigma",
+      "grad_abs_mean": 1.932352066040039,
+      "grad_signed_mean": 0.08092400431632996,
+      "grad_rms": 3.2566380500793457,
+      "feature_scale": 0.008157595992088318,
+      "standardized_sensitivity": 0.015763347469231803
+    }
+  ],
+  "grid_sensitivity": {
+    "grid_dim": 8192,
+    "grid_occupancy_mean_fraction": 0.020610237121582033,
+    "alpha_grid_l2_per_env_mean": 10.476847600936889,
+    "alpha_grid_l2_per_env_std": 7.197541303052404,
+    "phi_grid_l2_per_env_mean": 21.325320320129393,
+    "phi_grid_l2_per_env_std": 16.38067822178298,
+    "alpha_grid_l2_per_channel": [
+      6.858705520629883,
+      7.91970682144165
+    ],
+    "phi_grid_l2_per_channel": [
+      13.947898864746094,
+      16.13140869140625
+    ],
+    "alpha_priv_l2_total_abs": 2.6842098236083984,
+    "phi_priv_l2_total_abs": 5.352058410644531,
+    "alpha_grid_to_priv_ratio": 3.9031403241244393,
+    "phi_grid_to_priv_ratio": 3.9845081432063916
+  }
+}

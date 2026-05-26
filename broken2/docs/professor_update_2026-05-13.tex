@@ -1,0 +1,121 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage[margin=1in]{geometry}
+\usepackage{parskip}
+
+\title{Professor Update}
+\author{Chris Liang}
+\date{2026-05-13}
+
+\begin{document}
+\maketitle
+
+\section*{Headline}
+
+Layer 1 ($\alpha$-only) is closed: $\alpha$ is geometry-reactive (slack/$h$/$\|L_g h\|^2$ correlations $> 0.6$) but env-class-blind across friction, mass, COM (Pearson all $< 0.07$). Layer 2 (release $\phi$ + actuation-noise DR) is in flight on the lab box, currently on the third sub-iteration (v9): I'm fast-iterating the dense-reward design until $\text{R}^2(\phi, \sigma_\text{act}) > 0.20$ shows up, then ship.
+
+\section*{Setup recap (mostly carried from May 11)}
+
+\begin{itemize}
+\item Two-level: PPO teacher outputs CBF params; frozen Isaac Lab locomotion below; hard CBF half-space projection between.
+\item RMA-style split encoder (Kumar et al.): privileged DR features $\to z_{\text{priv}}$ ($16$-dim MLP, now including \texttt{actuation\_noise\_sigma}); local occupancy grid $\to z_{\text{grid}}$ (CNN). \texttt{cbf\_state} routed to value head only, not policy input.
+\item Released params: $\alpha$ (Layer 1) and now $\phi$ (Layer 2). $a$, $c$ frozen at $0$ for now; $b$ frozen permanently (SOCP).
+\item Headline metric: combined fall + stuck rate. Adaptation diagnostic: $|\text{Pearson}(\text{param}, \text{paired DR feature})| > 0.20$ within distribution, with a $\geq 3$pp combined-metric win on $\geq 1$ task.
+\end{itemize}
+
+\section*{Layer 1 closure (v3.2.1 → diagnosis)}
+
+\begin{center}
+\begin{tabular}{@{}l p{2.2in} l l l@{}}
+\toprule
+Run & Key change & $\alpha\ \mu/\sigma$ & $\max |r_{\text{DR}}|$ & HeavyCOM $\Delta$comb \\
+\midrule
+v3.1   & RMA split + AUX=0.005 + drop \texttt{v\_along\_cmd} + no \texttt{cbf\_state} in policy & 4.0 / 1.5  & 0.008 & tie \\
+v3.2   & + 45\% adversarial + grazing $28^\circ$ + \texttt{priv\_fov} + AUX=0                  & 3.05 / 1.96 & $<0.10$ & $+3.01$pp \\
+v3.2.1 & + $z_{\text{priv}}: 8 \to 16$ (capacity test)                                           & 3.27 / 1.91 & 0.063 & $-0.15$pp \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+What v3.2.1 settled: encoder capacity is not the bottleneck, v3.2's HeavyCOM $+3.01$pp didn't replicate, and DR correlations stay $|r| < 0.07$ regardless of architecture, capacity, or training distribution.
+
+Structural diagnosis: under hard CBF projection with a frozen locomotion controller below, $\alpha$ scales the $h$-recovery rate, and there is no control path from $\alpha$ to friction/mass/COM dynamics. ``Am I about to hit'' dominates ``how slippery is the floor'' in the QP's loss landscape. This is a parameter-vs-DR-axis mismatch, not a training failure --- and the fix is to release a different parameter whose physics actually touches a DR axis.
+
+\section*{Layer 2: release $\phi$, pair with actuation-noise DR}
+
+CBF QP rhs:
+\begin{equation}
+\text{rhs} \;=\; -\alpha(h - c) \;+\; \phi \,\|L_g h\|^2 \;+\; a
+\end{equation}
+
+$\phi$ multiplies $\|L_g h\|^2$ --- Kolathaya's ISSf input-disturbance margin. Both $\phi$ and actuation noise are about $L_g h$ estimate uncertainty, so the physical pairing is clean.
+
+\begin{itemize}
+\item Added \texttt{actuation\_noise\_sigma} to teacher priv obs ($z_\text{priv}$ MLP input, post-locomotion noise on $u_\text{safe}$).
+\item Actuation noise DR: per-episode $\sigma_\text{act} \sim \mathcal{U}(0, \sigma_\text{max})$; $\sigma_\text{max}$ tuned by sub-iteration (see below).
+\item Hold Layer 1 setup constant: RMA split, 45\% adversarial planner, AUX=0, \texttt{priv\_fov}, hard CBF projection. $\alpha$ stays released so we can verify Layer 1 geometry behavior is preserved.
+\item PASS criterion (v9): $\text{R}^2(\sigma_\text{act})$ from the linear probe on $z_\text{priv}$ $> 0.20$ AND $|\text{Pearson}(\phi, \sigma_\text{act})| > 0.20$ AND obstacle-contact termination $< 0.20$.
+\item New OOD eval task: \texttt{Isaac-CBF-Go2-HighActuationNoise-v0} ($\sigma_\text{max}=0.30$).
+\end{itemize}
+
+\section*{Layer 2 sub-iterations (v7 → v8 → v9, last 2 days)}
+
+I've been fast-iterating the dense-reward design --- training is $\sim$2 hours at 2000 iters / 4096 envs, so the iteration cost is low. Three sub-runs so far:
+
+\begin{center}
+\begin{tabular}{@{}l p{1.6in} p{2.7in}@{}}
+\toprule
+Sub-run & Change                                            & Outcome \\
+\midrule
+v7 & Baseline: TTC penalty $-1.0$, $\sigma_\text{max}=0.05$, default dense rewards & $\text{R}^2(\sigma_\text{act})$ stuck at $0.05$--$0.06$. Noise too small to drive return variance. \\
+v8 & Bump \texttt{u\_safe\_deviation} $-0.1 \to -0.5$ to make CBF intervention more salient & $\alpha$ \emph{saturated} at $4.999 \pm 0.005$. Higher $\alpha \Rightarrow$ looser constraint $\Rightarrow$ less QP intervention $\Rightarrow$ less penalty --- perverse incentive. \\
+v9 (\textbf{today}) & Revert v8's reward change; bump $\sigma_\text{max}: 0.05 \to 0.10$ rad; restore TTC at v7 settings & Smoke test passed: fall $0.047$ (vs baseline $0.016$), $\bar v_{xy}=0.65$ (vs $0.61$). Locomotion stable, noise has real perturbation. PPO training in flight on the lab box now. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The structural lesson from v8: salience-via-penalty-weight is dangerous when the policy can game the penalty by relaxing the constraint. v9 keeps the dense-reward stack minimal and lets the DR axis itself create the return variance.
+
+\section*{Current reward stack (v9, the version training tonight)}
+
+\begin{center}
+\begin{tabular}{@{}l l p{2.8in}@{}}
+\toprule
+Term & Weight & Role \\
+\midrule
+\texttt{collision}                & $-100$         & Terminal: per-shape SDF $< 0$. \\
+\texttt{base\_contact\_penalty}   & $-500$         & Terminal: fall. Larger than collision because falls are harder to recover from on hardware. \\
+\texttt{infeasibility}            & $-10$ / step   & QP returned infeasible. \\
+\texttt{ttc\_penalty}             & $-1.0$ / step  & Time-to-contact $< 0.3$ s. Restored in v9; provides anti-saturation pressure without the perverse incentive of u\_safe\_deviation. \\
+\texttt{u\_safe\_deviation}       & $-0.1$ / step  & $\|u_\text{safe} - u_\text{des}\|$. Reverted to v7 level after v8 saturation incident. \\
+\texttt{action\_rate}             & $-0.0025$      & Smoothness on $(\alpha, \phi, a, b, c)$ outputs. \\
+\texttt{stuck}                    & $-1.0$ / step  & Performance pressure when $\|v_{xy}\| < 0.15$ m/s. \\
+\texttt{cbf\_lhs\_margin}         & $0$ (OFF)      & Direct-gradient dense reward on slack. Switched off in v9 to test whether TTC alone is sufficient. \\
+\texttt{proximity}                & $0$ (OFF)      & Geometric exp-decay penalty. Off since v9. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Open questions (carried + new)}
+
+\begin{enumerate}
+\item \textbf{(Carried) Is the ``$\alpha$ has no lever on slip/inertia'' argument structurally sound?} Layer 1 evidence is strong but the argument matters for framing --- if Layer 2 also tops out at the same DR-correlation ceiling I want to be sure the diagnosis generalizes.
+\item \textbf{TTC vs slack-margin as the dense scaffold.} Layer 2 v9 has dropped \texttt{cbf\_lhs\_margin} in favor of \texttt{ttc\_penalty}. Both provide anti-saturation pressure; TTC is more behavior-grounded (``you'll hit something in $X$ seconds'') and less directly couplable to the slack equation. If v9 trains clean, this is the simpler story for the paper.
+\item \textbf{Layer 2 pass criterion realism.} $\text{R}^2(\sigma_\text{act}) > 0.20$ within-distribution is a hard bar given that even at $\sigma_\text{max} = 0.10$ the noise contributes maybe 5\% of return variance. Is it the right criterion or should I move to a stricter OOD test (BR-vs-fixed-$\phi$ on HighActuationNoise)?
+\end{enumerate}
+
+\section*{Status}
+
+\begin{itemize}
+\item Layer 2 v9 training in flight (2000 iters, $\sim$2 h on RTX 5090), launched today afternoon. Diagnostics auto-run after: $\phi$-corr + linear $z_\text{priv}$ probe.
+\item Fast-iter pipeline working: from running training/eval to seeing $\text{R}^2$ numbers $< 3$ h end-to-end. Letting me cycle dense-reward designs without burning days per attempt.
+\item If v9 passes: launch HighActuationNoise OOD eval, write Layer 2 result up, move to Layer 3 ($a$ + perception-noise DR). If v9 fails the same way as v7/v8: pivot the dense-reward design toward A3 (efficiency penalty $-w \cdot \phi$ to create a tug-of-war with the cost of intervention) rather than continue tuning weights.
+\item Hardware deploy on Go2 still on track for late May. Wk3 paper draft (intro + method + Wk1--2 results) gated on a Layer 2 outcome.
+\end{itemize}
+
+\end{document}

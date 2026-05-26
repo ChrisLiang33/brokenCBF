@@ -1,0 +1,94 @@
+{
+  "task": "Isaac-CBF-Go2-RMA-Layer3-PhiWin-TightCor-V8-v0",
+  "checkpoint": "logs/rsl_rl/cbf_go2_teacher_rma/2026-05-19_14-18-46/model_2499.pt",
+  "n_envs": 256,
+  "n_rollout_steps": 100,
+  "alpha_population_mean": 1.599414587020874,
+  "alpha_population_std": 0.3154849112033844,
+  "alpha_within_env_std_mean": 0.6032120585441589,
+  "correlations_with_alpha": {
+    "friction": -0.0468,
+    "base_mass": -0.0588,
+    "base_height": 0.3861,
+    "actuation_noise_sigma": -0.124,
+    "|applied_force|": -0.0048,
+    "|applied_torque|": 0.1762,
+    "|tracking_err|": 0.3554,
+    "|com_offset|": -0.0548,
+    "com_x": 0.0076,
+    "com_y": -0.1376,
+    "com_z": 0.1143
+  },
+  "within_episode_pearson_with_alpha": {
+    "|tracking_err|": {
+      "mean": 0.213,
+      "std": 0.2723,
+      "n_valid_envs": 256
+    },
+    "|base_ang_vel|": {
+      "mean": 0.0628,
+      "std": 0.2063,
+      "n_valid_envs": 256
+    },
+    "actuation_noise_sigma": {
+      "mean": 0.0115,
+      "std": 0.1203,
+      "n_valid_envs": 255
+    },
+    "h": {
+      "mean": 0.2901,
+      "std": 0.2976,
+      "n_valid_envs": 250
+    }
+  },
+  "feature_distributions": {
+    "friction": {
+      "mean": 0.7007,
+      "std": 0.2535,
+      "min": 0.3146,
+      "max": 1.183
+    },
+    "base_mass": {
+      "mean": 0.9642,
+      "std": 1.1707,
+      "min": -0.9728,
+      "max": 2.9588
+    },
+    "base_height": {
+      "mean": 0.214,
+      "std": 0.0243,
+      "min": 0.1649,
+      "max": 0.2808
+    },
+    "actuation_noise_sigma": {
+      "mean": 0.0147,
+      "std": 0.008,
+      "min": 0.0006,
+      "max": 0.0293
+    },
+    "|applied_force|": {
+      "mean": 9.6045,
+      "std": 2.864,
+      "min": 0.4813,
+      "max": 16.8935
+    },
+    "|applied_torque|": {
+      "mean": 1.9005,
+      "std": 0.5476,
+      "min": 0.2218,
+      "max": 3.3488
+    },
+    "|tracking_err|": {
+      "mean": 0.538,
+      "std": 0.4079,
+      "min": 0.0685,
+      "max": 2.3049
+    },
+    "|com_offset|": {
+      "mean": 0.0423,
+      "std": 0.0132,
+      "min": 0.0067,
+      "max": 0.073
+    }
+  }
+}

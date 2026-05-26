@@ -1,0 +1,219 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage[margin=1in]{geometry}
+\usepackage{parskip}
+
+\title{Professor Update}
+\author{Chris Liang}
+\date{2026-05-18}
+
+\begin{document}
+\maketitle
+
+\section*{Headline}
+
+I now have an empirical map of which CBF parameters PPO can vs cannot learn in our setup, and a mechanical explanation for each result. The short version:
+
+\begin{itemize}
+\item $\alpha$ \textbf{genuinely adapts} to body geometry (Pearson $-0.66$ with \texttt{base\_height}, robust across iterations). One-parameter adaptive CBF works.
+\item $\phi$ \textbf{cannot be learned by PPO} in our reward landscape, even with corrected noise placement and structured disturbance. Five iterations confirmed this; the failure mode is asymmetric-risk hedging, not implementation.
+\item $a$ and $c$ are \textbf{theoretically meaningful but structurally inert} in our specific sim regime. Both make sense as calibrated hyperparameters.
+\item $b$ is \textbf{not implemented} (action dim exists but is ignored by the QP).
+\end{itemize}
+
+Locked-best teacher: \texttt{LAYER3\_PUSH\_A\_C} at \texttt{joint\_actual} $= 0.724$ on the training distribution, $+1.6$pp over the best fixed CBF baseline. Pursuit of a 2+ adaptive-parameter teacher cost six follow-up iterations, none of which improved on this number; each failed for a different empirical reason but they all share the same root cause (below).
+
+CoRL target is off. This update is about characterizing what we've actually built rather than working toward a submission deadline.
+
+\section*{Iteration scorecard (since May 13)}
+
+\begin{center}
+\begin{tabular}{@{}l l p{2.6in}@{}}
+\toprule
+Iteration & \texttt{joint\_actual} & What we tried, and why it failed \\
+\midrule
+LAYER3\_PUSH\_A\_C & \textbf{0.724} & Locked-best. $\alpha + \phi + a + c$ all released; perception-radius DR one-sided. \\
+OMNI               & 0.503 & Truth-perception teacher. Confirms perception is not the bottleneck. \\
+DEFL               & 0.611 & L2 deflection penalty. PPO workaround: aggressive $u_\text{des}$ + QP clamp. \\
+CSYM               & 0.653 & Symmetric perception-error DR. Failed: $\delta_R$ not in priv obs. \\
+THEORY\_BUNDLE     & 0.694 & Added aggregate $\delta_R$ (mean + max) to priv obs. CLT variance collapse over $K=20$ obstacles. \\
+AP\_ADAPT          & 0.411 & $\alpha + \phi$ adaptive; $a, c$ frozen; $\sigma_\text{act}$ widened to 0.30. Locomotion broke under heavy $u_\text{des}$ noise. \\
+PHIWIN\_v1         & 0.560 & Moved actuation noise post-QP, added adversarial component aligned with $-\nabla h$. $\alpha$ adaptation collapsed; $\phi$ still hedged $20\times$ analytical optimum. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Per-parameter diagnosis}
+
+\subsection*{$\alpha$: learnable. Why this works}
+
+$\alpha$ scales the CBF $h$-recovery rate. Lower $\alpha$ = wider safety margin and gentler braking; higher $\alpha$ = sharper boundary response. In the locked-best teacher:
+
+\begin{itemize}
+\item Pearson$(\alpha, \texttt{base\_height}) = -0.66$ (between-env), stable across reruns.
+\item Pearson$(\alpha, |\texttt{tracking\_err}|) = -0.43$ (within-episode reactive).
+\item Encoder $R^2(\texttt{base\_height}) = 0.95$ --- the encoder cleanly learns COM offset, the most predictive signal.
+\end{itemize}
+
+\textbf{Mechanical reason $\alpha$ learnable:} the trade-off PPO faces along $\alpha$ is \emph{smooth and continuous}. $\alpha = 1$ vs $\alpha = 3$ in a calm episode --- both safe (the CBF projection enforces safety regardless), $\alpha = 1$ is slightly more conservative, slightly slower goal-reach. $\alpha = 1$ vs $\alpha = 3$ in a high-COM episode --- still both safe, $\alpha = 1$ is more stable, $\alpha = 3$ over-corrects. No catastrophic failure mode at either end; the gradient surface is well-behaved. PPO climbs it.
+
+\subsection*{$\phi$: not learnable in PPO. The asymmetric-risk story}
+
+$\phi$ is the Kolathaya 2018 ISSf input-uncertainty margin: $\phi \|L_g h\|^2$ pre-allocates safety margin to defend against bounded actuation noise.
+
+\textbf{Empirically:} across the locked-best teacher and four explicit retraining attempts, $\phi$ converges to a fixed moderate value ($\approx 1.0$--$3.6$ depending on training distribution) with low within-env variance. PHIWIN\_v1 was the cleanest test --- post-QP noise with adversarial component aligned with $-\nabla h$, scaling with $\sigma_\text{act}$, $\sigma_\text{act}$ in priv obs (encoder $R^2 = 0.74$). PPO output $\phi \approx 1.0$ across all $\sigma$ levels; analytical optimum was $\phi^* \approx 0.05$. The policy hedged $20\times$ higher than the math says it should.
+
+\textbf{Mechanical reason $\phi$ not learnable under PPO:}
+
+In any state with non-zero collision probability, the per-step reward landscape along $\phi$ has the structure:
+\begin{align*}
+\mathbb{E}[R \mid \phi] \;=\; R_\text{goal-reach}(\phi) - P_\text{collision}(\phi) \cdot C_\text{collision}
+\end{align*}
+where $R_\text{goal-reach}$ decreases monotonically and slowly with $\phi$ (slower locomotion, larger QP deflections), $P_\text{collision}$ drops steeply at some $\phi_\text{crit}$, and $C_\text{collision} \gg |\partial R_\text{goal-reach}/\partial \phi|$ (the collision penalty is roughly $100\times$ the per-step goal-reach delta).
+
+For PPO to learn ``low $\phi$ when $\sigma_\text{act}$ is low,'' it needs to see, on average, that low $\phi$ in low-$\sigma$ states yields higher reward. In our sim, low-$\sigma$ episodes are not collision-free at low $\phi$ --- a small fraction ($\sim 1\%$) have collisions from \emph{other} sources (push events, planner edge cases, locomotion controller transients, obstacle clustering at corners). For those rare episodes, the $\phi$ gradient pushes hard \emph{up}. The remaining 99\% push gently \emph{down}.
+
+Magnitude in the PPO gradient batch:
+\begin{itemize}
+\item $99\% \times (1 \times$ goal-reach gain from low $\phi$) $\approx +99$ pushing $\phi$ down
+\item $1\% \times (100 \times$ collision penalty from low $\phi$ when something else fails) $\approx +100$ pushing $\phi$ up
+\end{itemize}
+
+These cancel approximately. The policy finds the smallest $\phi$ that drives $P_\text{collision}$ to near zero in the \emph{worst-case} state of the batch, and stays there. PPO is a risk-averse optimizer under heavy-tailed cost distributions; this is its known pathology, not a sim-specific bug. Sandbox analysis showed the same structural argument independent of architecture: anywhere in state space where a non-$\phi$ failure mode contributes to collision risk at low $\phi$, the asymmetric penalty dominates the gradient.
+
+I've now empirically confirmed this across multiple noise model variants:
+
+\begin{itemize}
+\item Random Gaussian noise on $u_\text{des}$ pre-QP (legacy, locked-best): $\phi$ hedged at $3.6$.
+\item Random Gaussian noise on $u_\text{des}$ pre-QP, $\sigma$ widened $3\times$ (AP\_ADAPT): locomotion broke; $\phi$ pinned at $2.4$, no $\sigma$-correlation.
+\item Adversarial noise on $u_\text{safe}$ post-QP, $\sigma$ in priv obs (PHIWIN\_v1): $\phi$ pinned at $1.0$, Pearson with $\sigma_\text{act}$ came out at $-0.15$ (wrong sign).
+\end{itemize}
+
+No noise-model variant produced a $\phi$-$\sigma$ correlation $> 0.2$.
+
+\textbf{What would unblock $\phi$ adaptation:} this is essentially a question about RL algorithm choice rather than sim design. Options that could escape the asymmetric-risk pathology:
+
+\begin{itemize}
+\item DAgger-style imitation from an analytical $\phi^*(\sigma_\text{act})$ teacher (replaces the noisy reward gradient with a direct supervised target).
+\item Distributional RL (C51-style critic that learns the full return distribution rather than the mean) --- can in principle learn risk-aware policies that don't collapse to worst-case hedging.
+\item Risk-sensitive policy gradient methods (CVaR-PPO, etc.) --- explicit handling of tail risk.
+\end{itemize}
+
+I haven't pursued any of these because the canonical claim (``PPO + DR learns the right CBF params'') is exactly what fails, and changing the algorithm reframes the contribution rather than supporting the original framing.
+
+\subsection*{$a$: theoretically motivated, structurally inert in our sim}
+
+$a$ is the Dean 2019 additive disturbance slack: $a = D$ where $D$ is the worst-case bound on additive state disturbance.
+
+\textbf{Why $a$ is inert in our setup:} For $a$ to adapt, $D$ must vary either per-env or per-step \emph{and} be observable. In our sim:
+
+\begin{itemize}
+\item Push events are identical across all envs: $\pm 1$ m/s every $5$--$10$s. No per-env variation in $D$ to anticipate.
+\item Sandbox analysis: with $\alpha \geq 2$, the QP absorbs $|\Delta v| = 1.0$ m/s pushes without needing $a > 0$. The analytical $a^* \approx 0$ at our push magnitudes; $a$ becomes load-bearing only at $|\Delta v| \geq 1.5$ m/s.
+\item Per-step ``high-$a$-correct'' timesteps are $\sim 5\%$ of an episode (push recovery windows); ``low-$a$-correct'' timesteps are $\geq 95\%$ (calm walking). PPO's gradient is dominated by the majority.
+\end{itemize}
+
+PPO correctly converges to $a \approx 0$ across all iterations. The L1 tax we had on $a$ in the locked-best was redundant --- removing it (AP\_ADAPT) didn't cause $a$ to spike.
+
+$a$ would unlock as an adaptive parameter if we (1) introduced per-env variation in push amplitude with the amplitude in priv obs, and/or (2) increased push magnitudes past $1.5$ m/s. Both are plausible follow-ups but neither was central to the current investigation.
+
+\subsection*{$c$: deterministic analytical optimum, blocked by architecture}
+
+$c$ is the boundary-shift parameter --- it translates the effective CBF boundary by $c$ units. Sandbox proved analytically and empirically that $c^* = -\delta_R$ where $\delta_R$ is the perception bias (perceived radius minus true radius). Linear, slope $-1$, no noise.
+
+\textbf{Why $c$ is inert in our architecture:}
+
+In our sim, $\delta_R$ is sampled \emph{per-obstacle} (i.i.d. across the $K \approx 20$ obstacles in each scene) and held constant per-episode per-obstacle. The policy outputs \emph{one global $c$} applied uniformly to all obstacles. A single scalar $c$ cannot adapt to per-obstacle bias.
+
+I attempted to provide aggregate signals: \texttt{mean\_signed\_delta\_R} and \texttt{max\_abs\_delta\_R} in priv obs. By Central Limit Theorem, the cross-episode standard deviation of \texttt{mean\_signed\_delta\_R} is $\sigma_\delta / \sqrt{K} \approx 0.013$. This is well below the noise floor of any signal PPO can usefully learn from. The THEORY\_BUNDLE run confirmed this empirically (Pearson$(c, \text{aggregate } \delta_R) < 0.1$).
+
+$c$ would unlock as an adaptive parameter if we (1) sampled $\delta_R$ per-episode-constant across all obstacles in a scene (models calibration drift rather than per-obstacle measurement error), or (2) modified the policy to output per-obstacle $c$ (substantial architecture change). The first matches the most common physical scenario (whole-LiDAR systematic bias) and is plausibly the next backlog item if $c$ adaptation becomes important.
+
+\subsection*{$b$: not implemented}
+
+$b$ is the Dean 2019 multiplicative input-uncertainty parameter ($-b \|u\|^2$ in the constraint). It represents actuator-effort-proportional noise (motor backlash, current saturation, etc.). The action vector includes a $b$ slot (action dim 3) but the QP explicitly ignores it (\texttt{cbf\_params[:, 3] = b, ignored} in env code). Was carried for theoretical completeness with the original 5-parameter framing.
+
+Wiring $b$ would require modifying the actuation noise model to multiplicative and converting the QP to SOCP. Not currently warranted.
+
+\section*{The unifying explanation: which CBF parameters PPO can learn}
+
+After this many iterations, the pattern is clear:
+
+\begin{center}
+\begin{tabular}{@{}l p{2.0in} p{2.3in}@{}}
+\toprule
+Param & Empirical learnability & Why \\
+\midrule
+$\alpha$ & Learnable & Continuous trade-off, no catastrophic cliff. Gradient surface smooth. \\
+$\phi$ & Not learnable under PPO & Asymmetric-risk cliff: rare collision events dominate gradient, policy hedges. \\
+$a$ & Inert (in our regime) & Disturbance constant across envs; magnitude below $a$-active threshold. \\
+$b$ & Not implemented & Action slot ignored by QP; multiplicative noise not modeled. \\
+$c$ & Inert (in our architecture) & Per-obstacle bias collapses to noise under CLT across $K$ obstacles. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The reframe of the original Layer 1 finding (``$\alpha$ has no lever on slip/inertia'') is broader than I had it on May 11: it's not that each parameter needs the right DR pairing --- it's that PPO's gradient surface needs the right \emph{shape} for the parameter to be learnable. $\alpha$ has the right shape. $\phi$ doesn't, fundamentally.
+
+\section*{Other findings worth flagging}
+
+\subsection*{Stress eval: $+23$ pp nonlinear interaction}
+
+Ran a per-axis stress eval on the locked-best teacher: $4 \times 7$ table evaluating BR-vs-best-fixed gap on 6 single-axis-wide variants plus the wide-everything anchor. Top-level result:
+
+\begin{itemize}
+\item Sum of isolated per-axis gaps: $-21.3$pp (locked-best loses to fixed on every single-axis variant)
+\item Combined wide-everything gap: $+1.6$pp
+\item Difference: $+23.0$pp of pure nonlinear interaction
+\end{itemize}
+
+The adaptive policy's win over fixed CBF is almost entirely produced by the policy coupling adaptation \emph{across} DR axes simultaneously. No single axis explains the win; the policy is doing something fundamentally non-decomposable. This is the most interesting empirical finding of the whole investigation --- adaptive CBF policies leverage joint structure that fixed-parameter ablations can't reproduce.
+
+\subsection*{Theoretical sandbox}
+
+Built a pure-Python 2D single-integrator CBF QP in \texttt{safety\_cbf\_sandbox/}, no RL, no locomotion, no Isaac Lab. Used it to validate per-parameter analytical claims:
+
+\begin{itemize}
+\item $\alpha$: monotonic margin-vs-speed trade-off, no kink. Behaves exactly as Nagumo CBF theory predicts.
+\item $\phi$: irrelevant under random Gaussian noise. Relevant under adversarial (worst-case-direction) noise. Empirical $\phi^* \approx 1.4\sigma$ under adversarial.
+\item $a$: $a^* \approx \alpha \cdot |\Delta v| \cdot dt$. At our $|\Delta v|=1$, $\alpha=2$, $dt=0.05$: $a^* \approx 0.1$, but our $a$ range and the QP's existing margin absorb this without needing $a > 0$.
+\item $c$: $c^* = -\delta_R$ exactly. Linear, slope $-1$, deterministic.
+\end{itemize}
+
+The sandbox was useful for ruling out implementation bugs in the main sim and for predicting which parameter $\times$ noise-model combinations could in principle work.
+
+\section*{Where this leaves the project}
+
+\begin{itemize}
+\item \textbf{Locked-best teacher} (\texttt{LAYER3\_PUSH\_A\_C}, \texttt{joint\_actual} $= 0.724$) is the best teacher we have. $\alpha$ is genuinely adaptive; $\phi, a, c$ effectively hedge or memorize offsets. Brittle on narrow deploy distributions (loses to fixed CBF on \texttt{DEPLOY\_REALISTIC}) but reproducibly wins on the chaotic full-DR training distribution.
+\item The Mid-360 hardware calibration protocol is drafted; I haven't run it yet because the simulation iteration was consuming compute.
+\item Backlog items for the sim side: per-episode $\delta_R$ to unlock $c$, per-env push amplitude to unlock $a$, neither urgent.
+\end{itemize}
+
+\section*{Open questions}
+
+\begin{enumerate}
+\item \textbf{Is the PPO-asymmetric-risk argument for $\phi$ as strong as I think it is?} The mechanical story is clean but I've been wrong about predicted adaptive behavior four times in a row, so I'm reluctant to treat this as a closed proof. If you'd push back, would value the pointer.
+
+\item \textbf{Is a one-truly-adaptive-parameter ($\alpha$) teacher with three calibrated hyperparameters ($\phi, a, c$) a coherent research story, or a watered-down version of the original five-parameter pitch?} The honest framing is ``$\alpha$ is RL-adapted to body geometry; $\phi, a, c$ are analytically calibrated.'' Whether this is interesting enough to write up as anything depends on how you weigh the negative-result framing.
+
+\item \textbf{Worth pursuing distributional RL or DAgger-from-analytical to actually learn $\phi$?} Both are real algorithmic interventions that would address the asymmetric-risk pathology directly. The result would no longer be ``PPO can do this'' but ``with the right RL algorithm choice, CBF parameter adaptation can extend beyond $\alpha$.'' Different claim, possibly more interesting.
+
+\item \textbf{Is the $+23$pp nonlinear-interaction finding itself the more interesting contribution?} Independent of whether 2+ parameters can be RL-adapted, the empirical fact that the locked-best wins via cross-axis interaction (and would lose by 21 pp without it) is, I think, the cleanest single result of the investigation. Worth digging into further?
+\end{enumerate}
+
+\section*{Status}
+
+\begin{itemize}
+\item No active training. Compute idle.
+\item Mid-360 calibration protocol drafted at \texttt{docs/lidar\_calibration\_protocol.md}, ready to execute on hardware when we set up the session.
+\item Sandbox code at \texttt{safety\_cbf\_sandbox/}, runnable on laptop. Useful for follow-up theoretical questions if any of the unlock-paths get pursued.
+\item CoRL target dropped (your call on 2026-05-17). No paper-deadline framing in any of the above.
+\end{itemize}
+
+\end{document}

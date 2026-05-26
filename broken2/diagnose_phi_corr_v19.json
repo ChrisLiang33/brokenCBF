@@ -1,0 +1,74 @@
+{
+  "task": "Isaac-CBF-Go2-RMA-Layer2-v0",
+  "checkpoint": "logs/rsl_rl/cbf_go2_teacher_rma/2026-05-14_14-33-00/model_1499.pt",
+  "n_envs": 256,
+  "n_rollout_steps": 100,
+  "priv_dim": 16,
+  "use_locked": true,
+  "phi_population_mean": 1.920588731765747,
+  "phi_population_std": 1.393852710723877,
+  "phi_within_env_std_mean": 0.19868837296962738,
+  "correlations_with_phi": {
+    "friction": -0.0218,
+    "base_mass": 0.0457,
+    "base_height": 0.1767,
+    "actuation_noise_sigma": -0.0259,
+    "|applied_force|": 0.094,
+    "|applied_torque|": -0.0244,
+    "|tracking_err|": 0.0963,
+    "|com_offset|": -0.0633,
+    "com_x": 0.0403,
+    "com_y": -0.0427,
+    "com_z": -0.1116
+  },
+  "feature_distributions": {
+    "friction": {
+      "mean": 0.7007,
+      "std": 0.2535,
+      "min": 0.3146,
+      "max": 1.183
+    },
+    "base_mass": {
+      "mean": 0.9642,
+      "std": 1.1707,
+      "min": -0.9728,
+      "max": 2.9588
+    },
+    "base_height": {
+      "mean": 0.2142,
+      "std": 0.0265,
+      "min": 0.1593,
+      "max": 0.3008
+    },
+    "actuation_noise_sigma": {
+      "mean": 0.0485,
+      "std": 0.0287,
+      "min": 0.0001,
+      "max": 0.0994
+    },
+    "|applied_force|": {
+      "mean": 9.5212,
+      "std": 2.8761,
+      "min": 1.24,
+      "max": 16.6597
+    },
+    "|applied_torque|": {
+      "mean": 1.8544,
+      "std": 0.56,
+      "min": 0.4199,
+      "max": 3.2189
+    },
+    "|tracking_err|": {
+      "mean": 0.2512,
+      "std": 0.198,
+      "min": 0.019,
+      "max": 1.2274
+    },
+    "|com_offset|": {
+      "mean": 0.0423,
+      "std": 0.0132,
+      "min": 0.0067,
+      "max": 0.073
+    }
+  }
+}

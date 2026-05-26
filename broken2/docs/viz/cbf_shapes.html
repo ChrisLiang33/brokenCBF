@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CBF shapes & Minkowski expansion</title>
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 20px; background: #f5f5f5; }
+  h1 { font-size: 18px; margin: 0 0 8px 0; }
+  .desc { font-size: 13px; color: #555; margin: 0 0 16px 0; max-width: 760px; line-height: 1.4; }
+  .row { display: flex; gap: 24px; align-items: flex-start; }
+  .panel { background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  canvas { display: block; border: 1px solid #ddd; background: #fafafa; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  .controls { width: 280px; }
+  .control { margin-bottom: 12px; }
+  .control label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  .control input[type=range] { width: 100%; }
+  .control select { width: 100%; padding: 4px; }
+  .val { font-family: monospace; color: #006699; font-size: 12px; }
+  .legend { font-size: 12px; line-height: 1.6; margin-top: 12px; }
+  .legend .swatch { display: inline-block; width: 12px; height: 12px; vertical-align: middle; margin-right: 4px; border-radius: 2px; }
+  .readout { font-family: monospace; font-size: 12px; background: #f0f0f0; padding: 8px; border-radius: 4px; margin-top: 8px; }
+  .note { font-size: 12px; color: #666; margin-top: 12px; padding: 8px; background: #fff8dc; border-left: 3px solid #d4a017; }
+</style>
+</head>
+<body>
+<h1>CBF shapes &amp; Minkowski expansion</h1>
+<p class="desc">
+  Drag the robot. The orange ring around the obstacle is the
+  <strong>Minkowski-expanded forbidden zone</strong> — where h = 0.
+  Combined radius = obstacle_radius + robot_radius. Try the rectangular robot
+  and the wall obstacle to see where the simple "add radii" formula holds and
+  where it breaks.
+</p>
+
+<div class="row">
+  <div class="panel">
+    <canvas id="cv" width="600" height="600"></canvas>
+  </div>
+
+  <div class="panel controls">
+    <div class="control">
+      <label>Obstacle shape</label>
+      <select id="obsShape">
+        <option value="circle">Circle</option>
+        <option value="wall">Wall (vertical line)</option>
+        <option value="blob">Concave blob (melted ice cream)</option>
+      </select>
+    </div>
+
+    <div class="control">
+      <label>Obstacle radius / size: <span class="val" id="obsRVal">0.35</span> m</label>
+      <input type="range" id="obsR" min="0.1" max="1.0" step="0.05" value="0.35">
+    </div>
+
+    <div class="control">
+      <label>Robot shape</label>
+      <select id="robotShape">
+        <option value="circle">Circle (current code: 0.15m)</option>
+        <option value="rect">Rectangle (real Go2: 0.6 × 0.3)</option>
+      </select>
+    </div>
+
+    <div class="control">
+      <label>Robot radius (circle): <span class="val" id="robotRVal">0.15</span> m</label>
+      <input type="range" id="robotR" min="0.05" max="0.5" step="0.025" value="0.15">
+    </div>
+
+    <div class="control">
+      <label>Robot length (rect): <span class="val" id="robotLenVal">0.6</span> m</label>
+      <input type="range" id="robotLen" min="0.3" max="1.0" step="0.05" value="0.6">
+    </div>
+
+    <div class="control">
+      <label>Robot width (rect): <span class="val" id="robotWidVal">0.3</span> m</label>
+      <input type="range" id="robotWid" min="0.15" max="0.5" step="0.025" value="0.3">
+    </div>
+
+    <div class="control">
+      <label>Robot yaw (rect): <span class="val" id="robotYawVal">0</span>&deg;</label>
+      <input type="range" id="robotYaw" min="-180" max="180" step="5" value="0">
+    </div>
+
+    <div class="readout" id="readout"></div>
+
+    <div class="legend">
+      <div><span class="swatch" style="background:#cc2222"></span> obstacle (geometry)</div>
+      <div><span class="swatch" style="background:#ff9933;opacity:.5"></span> Minkowski expansion (h = 0 boundary, circle approx)</div>
+      <div><span class="swatch" style="background:#3366cc"></span> robot</div>
+      <div><span class="swatch" style="background:#888;border:1px solid #444"></span> true contact iso-line (exact, for non-circular shapes)</div>
+    </div>
+
+    <div class="note" id="note"></div>
+  </div>
+</div>
+
+<script>
+// world units: meters. canvas: pixels.
+// origin: canvas center. +x right, +y down (we flip for math).
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const SCALE = 100; // 1m = 100px
+const ORIGIN = { x: W/2, y: H/2 };
+
+// state
+const state = {
+  obsShape: 'circle',
+  obsR: 0.35,
+  robotShape: 'circle',
+  robotR: 0.15,
+  robotLen: 0.6,
+  robotWid: 0.3,
+  robotYaw: 0,           // degrees
+  robotPos: { x: 1.5, y: 0.0 }, // world meters
+  obsPos: { x: 0.0, y: 0.0 },
+};
+
+// helpers
+function w2c(p) { return { x: ORIGIN.x + p.x * SCALE, y: ORIGIN.y - p.y * SCALE }; }
+function c2w(p) { return { x: (p.x - ORIGIN.x) / SCALE, y: -(p.y - ORIGIN.y) / SCALE }; }
+
+// SDF helpers
+function sdCircle(p, c, r) {
+  const dx = p.x - c.x, dy = p.y - c.y;
+  return Math.hypot(dx, dy) - r;
+}
+
+function sdWall(p, c) {
+  // vertical wall at x = c.x, infinite y
+  return p.x - c.x;
+}
+
+// concave blob = union of two circles (the "melted ice cream" lobes)
+function sdBlob(p, c, r) {
+  const c1 = { x: c.x - r * 0.6, y: c.y };
+  const c2 = { x: c.x + r * 0.6, y: c.y };
+  const d1 = sdCircle(p, c1, r * 0.7);
+  const d2 = sdCircle(p, c2, r * 0.7);
+  return Math.min(d1, d2);
+}
+
+function sdObstacle(p) {
+  if (state.obsShape === 'circle') return sdCircle(p, state.obsPos, state.obsR);
+  if (state.obsShape === 'wall')   return sdWall(p, state.obsPos);
+  if (state.obsShape === 'blob')   return sdBlob(p, state.obsPos, state.obsR);
+}
+
+// SDF for the robot (assume robot at origin, then translate)
+function sdRobotShape(p) {
+  // p in robot-local frame
+  if (state.robotShape === 'circle') {
+    return Math.hypot(p.x, p.y) - state.robotR;
+  }
+  // rectangle SDF (axis-aligned at origin)
+  const hx = state.robotLen / 2, hy = state.robotWid / 2;
+  const ax = Math.abs(p.x) - hx, ay = Math.abs(p.y) - hy;
+  const inside = Math.min(0, Math.max(ax, ay));
+  const outside = Math.hypot(Math.max(ax, 0), Math.max(ay, 0));
+  return outside + inside;
+}
+
+// "true" minimum-distance between obstacle surface and robot surface
+// Approximate by sampling the robot boundary and checking obstacle SDF
+function trueGapAndContact() {
+  // sample boundary points around the robot in robot frame
+  const yawRad = state.robotYaw * Math.PI / 180;
+  const cos = Math.cos(yawRad), sin = Math.sin(yawRad);
+  const samples = 64;
+  let minSDF = Infinity;
+  let contactPts = [];
+  // also gather "iso = 0" boundary to draw
+  for (let i = 0; i < samples; i++) {
+    let pLocal;
+    if (state.robotShape === 'circle') {
+      const t = (i / samples) * 2 * Math.PI;
+      pLocal = { x: Math.cos(t) * state.robotR, y: Math.sin(t) * state.robotR };
+    } else {
+      // walk perimeter of rect
+      const total = 2 * (state.robotLen + state.robotWid);
+      const s = (i / samples) * total;
+      const hx = state.robotLen / 2, hy = state.robotWid / 2;
+      let lp;
+      if (s < state.robotLen) lp = { x: -hx + s, y: -hy };
+      else if (s < state.robotLen + state.robotWid) lp = { x: hx, y: -hy + (s - state.robotLen) };
+      else if (s < 2 * state.robotLen + state.robotWid) lp = { x: hx - (s - state.robotLen - state.robotWid), y: hy };
+      else lp = { x: -hx, y: hy - (s - 2 * state.robotLen - state.robotWid) };
+      pLocal = lp;
+    }
+    // rotate + translate to world
+    const wx = state.robotPos.x + pLocal.x * cos - pLocal.y * sin;
+    const wy = state.robotPos.y + pLocal.x * sin + pLocal.y * cos;
+    const sdf = sdObstacle({ x: wx, y: wy });
+    if (sdf < minSDF) minSDF = sdf;
+  }
+  return minSDF;
+}
+
+// draw
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // grid
+  ctx.strokeStyle = '#e5e5e5';
+  ctx.lineWidth = 1;
+  for (let x = -3; x <= 3; x += 0.5) {
+    const c = w2c({ x, y: 0 });
+    ctx.beginPath(); ctx.moveTo(c.x, 0); ctx.lineTo(c.x, H); ctx.stroke();
+  }
+  for (let y = -3; y <= 3; y += 0.5) {
+    const c = w2c({ x: 0, y });
+    ctx.beginPath(); ctx.moveTo(0, c.y); ctx.lineTo(W, c.y); ctx.stroke();
+  }
+  // axes
+  ctx.strokeStyle = '#999';
+  ctx.beginPath(); ctx.moveTo(0, ORIGIN.y); ctx.lineTo(W, ORIGIN.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ORIGIN.x, 0); ctx.lineTo(ORIGIN.x, H); ctx.stroke();
+
+  // Minkowski-expanded forbidden zone (orange) — only meaningful for circles
+  // For circle obstacle + circle robot: it's a circle of radius (R_obs + R_robot)
+  // For circle obstacle + rect robot: approximation only
+  const R_circle_approx = state.obsR + (state.robotShape === 'circle'
+    ? state.robotR
+    : Math.hypot(state.robotLen, state.robotWid) / 2);
+  if (state.obsShape === 'circle' || state.obsShape === 'blob') {
+    const c = w2c(state.obsPos);
+    ctx.fillStyle = 'rgba(255,153,51,0.18)';
+    ctx.strokeStyle = 'rgba(255,153,51,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    if (state.obsShape === 'circle') {
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, R_circle_approx * SCALE, 0, 2 * Math.PI);
+      ctx.fill(); ctx.stroke();
+    } else {
+      // blob: draw the orange around each lobe
+      const r = state.obsR;
+      const c1 = w2c({ x: state.obsPos.x - r * 0.6, y: state.obsPos.y });
+      const c2 = w2c({ x: state.obsPos.x + r * 0.6, y: state.obsPos.y });
+      const Rmink = r * 0.7 + (state.robotShape === 'circle' ? state.robotR : Math.hypot(state.robotLen, state.robotWid) / 2);
+      ctx.beginPath(); ctx.arc(c1.x, c1.y, Rmink * SCALE, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(c2.x, c2.y, Rmink * SCALE, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  } else if (state.obsShape === 'wall') {
+    // wall expansion: just a line shifted by combined radius
+    const offsetR = state.robotShape === 'circle' ? state.robotR : Math.hypot(state.robotLen, state.robotWid) / 2;
+    const xb = state.obsPos.x + offsetR;
+    const c = w2c({ x: xb, y: 0 });
+    ctx.strokeStyle = 'rgba(255,153,51,0.7)';
+    ctx.setLineDash([6, 4]);
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(c.x, 0); ctx.lineTo(c.x, H); ctx.stroke();
+    ctx.setLineDash([]);
+    // shaded region
+    ctx.fillStyle = 'rgba(255,153,51,0.15)';
+    const cobs = w2c(state.obsPos);
+    ctx.fillRect(cobs.x, 0, c.x - cobs.x, H);
+  }
+
+  // obstacle (red)
+  ctx.fillStyle = '#cc2222';
+  ctx.strokeStyle = '#660000';
+  ctx.lineWidth = 1.5;
+  if (state.obsShape === 'circle') {
+    const c = w2c(state.obsPos);
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, state.obsR * SCALE, 0, 2 * Math.PI);
+    ctx.fill(); ctx.stroke();
+  } else if (state.obsShape === 'wall') {
+    const c = w2c(state.obsPos);
+    ctx.fillRect(c.x, 0, W - c.x, H);
+    ctx.beginPath(); ctx.moveTo(c.x, 0); ctx.lineTo(c.x, H); ctx.stroke();
+  } else if (state.obsShape === 'blob') {
+    const r = state.obsR;
+    const c1 = w2c({ x: state.obsPos.x - r * 0.6, y: state.obsPos.y });
+    const c2 = w2c({ x: state.obsPos.x + r * 0.6, y: state.obsPos.y });
+    ctx.beginPath(); ctx.arc(c1.x, c1.y, r * 0.7 * SCALE, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(c2.x, c2.y, r * 0.7 * SCALE, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+  }
+
+  // robot (blue)
+  ctx.fillStyle = 'rgba(51,102,204,0.65)';
+  ctx.strokeStyle = '#003388';
+  ctx.lineWidth = 1.5;
+  const rc = w2c(state.robotPos);
+  if (state.robotShape === 'circle') {
+    ctx.beginPath();
+    ctx.arc(rc.x, rc.y, state.robotR * SCALE, 0, 2 * Math.PI);
+    ctx.fill(); ctx.stroke();
+  } else {
+    ctx.save();
+    ctx.translate(rc.x, rc.y);
+    ctx.rotate(-state.robotYaw * Math.PI / 180); // canvas y is flipped
+    ctx.fillRect(-state.robotLen/2 * SCALE, -state.robotWid/2 * SCALE, state.robotLen * SCALE, state.robotWid * SCALE);
+    ctx.strokeRect(-state.robotLen/2 * SCALE, -state.robotWid/2 * SCALE, state.robotLen * SCALE, state.robotWid * SCALE);
+    // direction arrow
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(state.robotLen/2 * SCALE, 0);
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // robot center dot
+  ctx.fillStyle = '#003388';
+  ctx.beginPath(); ctx.arc(rc.x, rc.y, 3, 0, 2 * Math.PI); ctx.fill();
+
+  // readout
+  const sdfCenterToObs = sdObstacle(state.robotPos);
+  const trueGap = trueGapAndContact();
+  const robotApproxR = state.robotShape === 'circle' ? state.robotR : Math.hypot(state.robotLen, state.robotWid) / 2;
+  const Rmink = state.obsR + robotApproxR;
+  const minkSdf = state.obsShape === 'wall'
+    ? sdfCenterToObs - robotApproxR
+    : sdfCenterToObs - robotApproxR;
+  const lambda = 1.0, gamma = 0.5;
+  const h = lambda * (1 - Math.exp(-gamma * minkSdf));
+
+  document.getElementById('readout').innerHTML =
+    `dist (center→obs surface):  ${sdfCenterToObs.toFixed(3)} m\n` +
+    `combined radius (Mink):      ${Rmink.toFixed(3)} m  (= ${state.obsR.toFixed(2)} + ${robotApproxR.toFixed(2)})\n` +
+    `Minkowski SDF (used in code): ${minkSdf.toFixed(3)} m  (h = 0 boundary)\n` +
+    `true gap (robot edge→obs):   ${trueGap.toFixed(3)} m  (exact)\n` +
+    `code's h(x):                  ${h.toFixed(3)}\n` +
+    `mismatch (true - mink):       ${(trueGap - minkSdf).toFixed(3)} m`;
+
+  // explanatory note
+  const noteEl = document.getElementById('note');
+  let noteText = '';
+  if (state.robotShape === 'circle' && state.obsShape === 'circle') {
+    noteText = 'Circle + circle: Minkowski math is EXACT. true gap = code\'s SDF. This is the case the code assumes.';
+  } else if (state.robotShape === 'rect' && state.obsShape === 'circle') {
+    noteText = 'Rectangle robot + circle obstacle: Minkowski circle approximation OVER-estimates the radius (uses diagonal). Code may say h > 0 when robot edge is in contact (long axis), or under-estimates clearance (short axis).';
+  } else if (state.obsShape === 'wall') {
+    noteText = 'Wall: SDF gradient is constant (the wall normal). For circle robot, Mink expansion is exact (just shift the wall). For rect robot, depends on yaw: head-on uses length/2, sideways uses width/2.';
+  } else if (state.obsShape === 'blob') {
+    noteText = 'Concave blob: SDF has multiple local minima where the closest lobe switches. Gradient e_i jumps discontinuously at the seam. Exponential smoothing helps but doesn\'t fix it. Real fix: precompute a signed distance field over a grid.';
+  }
+  noteEl.textContent = noteText;
+}
+
+// dragging
+let dragging = false;
+cv.addEventListener('mousedown', (e) => {
+  const rect = cv.getBoundingClientRect();
+  const cp = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  state.robotPos = c2w(cp);
+  dragging = true;
+  draw();
+});
+cv.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  const rect = cv.getBoundingClientRect();
+  const cp = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  state.robotPos = c2w(cp);
+  draw();
+});
+window.addEventListener('mouseup', () => { dragging = false; });
+
+// controls
+function bind(id, key, parse) {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    state[key] = parse(el.value);
+    document.getElementById(id + 'Val').textContent = state[key];
+    draw();
+  });
+}
+bind('obsR', 'obsR', parseFloat);
+bind('robotR', 'robotR', parseFloat);
+bind('robotLen', 'robotLen', parseFloat);
+bind('robotWid', 'robotWid', parseFloat);
+bind('robotYaw', 'robotYaw', parseFloat);
+document.getElementById('obsShape').addEventListener('change', (e) => {
+  state.obsShape = e.target.value; draw();
+});
+document.getElementById('robotShape').addEventListener('change', (e) => {
+  state.robotShape = e.target.value; draw();
+});
+
+draw();
+</script>
+</body>
+</html>

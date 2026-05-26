@@ -1,0 +1,207 @@
+{
+  "task": "Isaac-CBF-Go2-RMA-Layer3-TwoStream-V13-1-v0",
+  "checkpoint": "logs/rsl_rl/cbf_go2_teacher_rma/2026-05-20_18-25-01/model_2499.pt",
+  "n_envs": 256,
+  "n_rollout_steps": 50,
+  "priv_dim": 33,
+  "alpha_head": [
+    {
+      "feature": "friction",
+      "grad_abs_mean": 0.17859962582588196,
+      "grad_signed_mean": -0.11439760029315948,
+      "grad_rms": 0.3238193988800049,
+      "feature_scale": 0.2534821629524231,
+      "standardized_sensitivity": 0.045271819456838
+    },
+    {
+      "feature": "base_mass",
+      "grad_abs_mean": 0.03414482995867729,
+      "grad_signed_mean": 0.022517651319503784,
+      "grad_rms": 0.056225862354040146,
+      "feature_scale": 1.1707336902618408,
+      "standardized_sensitivity": 0.039974502780885324
+    },
+    {
+      "feature": "|applied_force|",
+      "grad_abs_mean": 0.014104731380939484,
+      "grad_signed_mean": -0.00017782188660930842,
+      "grad_rms": 0.027405839413404465,
+      "feature_scale": 5.759435176849365,
+      "standardized_sensitivity": 0.08123528607539399
+    },
+    {
+      "feature": "|applied_torque|",
+      "grad_abs_mean": 0.05409837141633034,
+      "grad_signed_mean": 0.008013260550796986,
+      "grad_rms": 0.10393032431602478,
+      "feature_scale": 1.1524497270584106,
+      "standardized_sensitivity": 0.06234565337305442
+    },
+    {
+      "feature": "|com_offset|",
+      "grad_abs_mean": 3.4586775302886963,
+      "grad_signed_mean": 0.49392709136009216,
+      "grad_rms": 6.1776018142700195,
+      "feature_scale": 0.024994386360049248,
+      "standardized_sensitivity": 0.08644752248685661
+    },
+    {
+      "feature": "actuation_noise_sigma",
+      "grad_abs_mean": 1.344773530960083,
+      "grad_signed_mean": -0.7921627163887024,
+      "grad_rms": 2.245401382446289,
+      "feature_scale": 0.008296038024127483,
+      "standardized_sensitivity": 0.011156292346685026
+    },
+    {
+      "feature": "mean_signed_delta_R",
+      "grad_abs_mean": 5.9128875732421875,
+      "grad_signed_mean": -2.5554912090301514,
+      "grad_rms": 12.400162696838379,
+      "feature_scale": 0.0063582295551896095,
+      "standardized_sensitivity": 0.037595496524701844
+    },
+    {
+      "feature": "max_abs_delta_R",
+      "grad_abs_mean": 6.575009822845459,
+      "grad_signed_mean": 4.493889331817627,
+      "grad_rms": 12.58824348449707,
+      "feature_scale": 0.004287583753466606,
+      "standardized_sensitivity": 0.028190905295315538
+    },
+    {
+      "feature": "base_height",
+      "grad_abs_mean": 0.6939290165901184,
+      "grad_signed_mean": 0.627785325050354,
+      "grad_rms": 0.9509277939796448,
+      "feature_scale": 0.07364260405302048,
+      "standardized_sensitivity": 0.05110273980964797
+    },
+    {
+      "feature": "|tracking_err|",
+      "grad_abs_mean": 0.3877958357334137,
+      "grad_signed_mean": 0.05961613357067108,
+      "grad_rms": 0.5401434302330017,
+      "feature_scale": 0.3134188950061798,
+      "standardized_sensitivity": 0.12154254232356454
+    },
+    {
+      "feature": "|base_ang_vel|",
+      "grad_abs_mean": 0.06882533431053162,
+      "grad_signed_mean": 0.019751278683543205,
+      "grad_rms": 0.09973950684070587,
+      "feature_scale": 0.5890910029411316,
+      "standardized_sensitivity": 0.040544385216749745
+    }
+  ],
+  "phi_head": [
+    {
+      "feature": "friction",
+      "grad_abs_mean": 0.2393363118171692,
+      "grad_signed_mean": 0.1633891463279724,
+      "grad_rms": 0.3727859556674957,
+      "feature_scale": 0.2534821629524231,
+      "standardized_sensitivity": 0.060667485992471626
+    },
+    {
+      "feature": "base_mass",
+      "grad_abs_mean": 0.04976740851998329,
+      "grad_signed_mean": -0.03207099065184593,
+      "grad_rms": 0.07838127017021179,
+      "feature_scale": 1.1707336902618408,
+      "standardized_sensitivity": 0.05826438183136862
+    },
+    {
+      "feature": "|applied_force|",
+      "grad_abs_mean": 0.024123677983880043,
+      "grad_signed_mean": 0.00031200400553643703,
+      "grad_rms": 0.042788684368133545,
+      "feature_scale": 5.759435176849365,
+      "standardized_sensitivity": 0.1389387595753453
+    },
+    {
+      "feature": "|applied_torque|",
+      "grad_abs_mean": 0.08560875803232193,
+      "grad_signed_mean": -0.0031583141535520554,
+      "grad_rms": 0.1423010677099228,
+      "feature_scale": 1.1524497270584106,
+      "standardized_sensitivity": 0.09865978982815893
+    },
+    {
+      "feature": "|com_offset|",
+      "grad_abs_mean": 6.122740268707275,
+      "grad_signed_mean": -1.2384976148605347,
+      "grad_rms": 10.567582130432129,
+      "feature_scale": 0.024994386360049248,
+      "standardized_sensitivity": 0.1530341358583014
+    },
+    {
+      "feature": "actuation_noise_sigma",
+      "grad_abs_mean": 2.1056723594665527,
+      "grad_signed_mean": 1.3044781684875488,
+      "grad_rms": 3.3276736736297607,
+      "feature_scale": 0.008296038024127483,
+      "standardized_sensitivity": 0.017468737960488756
+    },
+    {
+      "feature": "mean_signed_delta_R",
+      "grad_abs_mean": 9.663705825805664,
+      "grad_signed_mean": 3.571190118789673,
+      "grad_rms": 16.456148147583008,
+      "feature_scale": 0.0063582295551896095,
+      "standardized_sensitivity": 0.061444059994295586
+    },
+    {
+      "feature": "max_abs_delta_R",
+      "grad_abs_mean": 9.831785202026367,
+      "grad_signed_mean": -6.613346576690674,
+      "grad_rms": 15.377649307250977,
+      "feature_scale": 0.004287583753466606,
+      "standardized_sensitivity": 0.042154602499781646
+    },
+    {
+      "feature": "base_height",
+      "grad_abs_mean": 1.4798156023025513,
+      "grad_signed_mean": 1.341085433959961,
+      "grad_rms": 2.2351741790771484,
+      "feature_scale": 0.07364260405302048,
+      "standardized_sensitivity": 0.1089774744718488
+    },
+    {
+      "feature": "|tracking_err|",
+      "grad_abs_mean": 0.6936309337615967,
+      "grad_signed_mean": -0.0018769885646179318,
+      "grad_rms": 1.1086784601211548,
+      "feature_scale": 0.3134188950061798,
+      "standardized_sensitivity": 0.21739704080166433
+    },
+    {
+      "feature": "|base_ang_vel|",
+      "grad_abs_mean": 0.1254870593547821,
+      "grad_signed_mean": 0.02164802886545658,
+      "grad_rms": 0.19341807067394257,
+      "feature_scale": 0.5890910029411316,
+      "standardized_sensitivity": 0.0739232976514419
+    }
+  ],
+  "grid_sensitivity": {
+    "grid_dim": 8192,
+    "grid_occupancy_mean_fraction": 0.019825172424316407,
+    "alpha_grid_l2_per_env_mean": 9.196322441101074,
+    "alpha_grid_l2_per_env_std": 6.518707203461956,
+    "phi_grid_l2_per_env_mean": 19.07625846862793,
+    "phi_grid_l2_per_env_std": 15.927252466727664,
+    "alpha_grid_l2_per_channel": [
+      6.348112106323242,
+      6.652958393096924
+    ],
+    "phi_grid_l2_per_channel": [
+      13.175742149353027,
+      13.79373836517334
+    ],
+    "alpha_priv_l2_total_abs": 9.624795913696289,
+    "phi_priv_l2_total_abs": 15.320816040039062,
+    "alpha_grid_to_priv_ratio": 0.9554823316320413,
+    "phi_grid_to_priv_ratio": 1.2451202611384722
+  }
+}

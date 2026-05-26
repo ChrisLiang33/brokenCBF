@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>e_i and L_g h visualization</title>
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 20px; background: #f5f5f5; }
+  h1 { font-size: 18px; margin: 0 0 8px 0; }
+  .desc { font-size: 13px; color: #555; margin: 0 0 16px 0; max-width: 900px; line-height: 1.5; }
+  .row { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  .panel { background: white; padding: 14px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .panel h2 { font-size: 14px; margin: 0 0 8px 0; color: #333; }
+  canvas { display: block; border: 1px solid #ddd; background: #fafafa; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  .controls { width: 280px; }
+  .control { margin-bottom: 10px; }
+  .control label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+  .control input[type=range] { width: 100%; }
+  .val { font-family: monospace; color: #006699; font-size: 12px; }
+  .legend { font-size: 12px; line-height: 1.7; margin-top: 12px; }
+  .legend .swatch { display: inline-block; width: 16px; height: 4px; vertical-align: middle; margin-right: 6px; }
+  .legend .dot { display: inline-block; width: 10px; height: 10px; vertical-align: middle; margin-right: 6px; border-radius: 50%; }
+  .readout { font-family: monospace; font-size: 11px; background: #f0f0f0; padding: 8px; border-radius: 4px; white-space: pre; line-height: 1.5; }
+  .note { font-size: 12px; color: #666; margin-top: 10px; padding: 8px; background: #fff8dc; border-left: 3px solid #d4a017; }
+</style>
+</head>
+<body>
+<h1>e_i and L_g h visualization</h1>
+<p class="desc">
+  <strong>Left:</strong> position space (top-down view). Drag the robot.
+  <strong style="color:#cc7700;">e_i</strong> points away from the obstacle (unit vector).
+  <strong style="color:#aa00aa;">L_g h</strong> is along e_i but its magnitude shrinks exponentially with distance.<br>
+  <strong>Right:</strong> velocity space (also 2D). Drag the
+  <strong style="color:#0a7">u_des</strong> tip. The dashed line is the CBF
+  constraint boundary; the shaded side is unsafe.
+  <strong style="color:#a04">u_safe</strong> is the perpendicular projection
+  of u_des onto the boundary when u_des violates the constraint.
+</p>
+
+<div class="row">
+  <!-- Position space canvas -->
+  <div class="panel">
+    <h2>Position space (drag robot)</h2>
+    <canvas id="cvPos" width="500" height="500"></canvas>
+  </div>
+
+  <!-- Velocity space canvas -->
+  <div class="panel">
+    <h2>Velocity space (drag u_des tip)</h2>
+    <canvas id="cvVel" width="400" height="400"></canvas>
+  </div>
+
+  <!-- Controls + readout -->
+  <div class="panel controls">
+    <h2>Parameters</h2>
+    <div class="control"><label>α (decay): <span class="val" id="alphaVal">1.0</span></label>
+      <input type="range" id="alpha" min="0.1" max="5.0" step="0.1" value="1.0"></div>
+    <div class="control"><label>φ (act. unc.): <span class="val" id="phiVal">0.1</span></label>
+      <input type="range" id="phi" min="0" max="2.0" step="0.05" value="0.1"></div>
+    <div class="control"><label>a (meas. unc.): <span class="val" id="aVal">0.05</span></label>
+      <input type="range" id="a" min="0" max="0.5" step="0.025" value="0.05"></div>
+    <div class="control"><label>c (set shrink): <span class="val" id="cVal">0.1</span></label>
+      <input type="range" id="c" min="0" max="0.5" step="0.025" value="0.1"></div>
+    <div class="control"><label>γ (smoothing): <span class="val" id="gammaVal">0.5</span></label>
+      <input type="range" id="gamma" min="0.1" max="2.0" step="0.05" value="0.5"></div>
+
+    <h2 style="margin-top:14px;">State</h2>
+    <div class="readout" id="readout"></div>
+
+    <div class="legend">
+      <div><span class="dot" style="background:#cc2222"></span> obstacle</div>
+      <div><span class="dot" style="background:#3366cc"></span> robot center</div>
+      <div><span class="swatch" style="background:#cc7700"></span> e_i (unit, dir away)</div>
+      <div><span class="swatch" style="background:#aa00aa"></span> L_g h (dir + magnitude)</div>
+      <div><span class="dot" style="background:#0a7"></span> u_des (drag this)</div>
+      <div><span class="dot" style="background:#a04"></span> u_safe</div>
+    </div>
+
+    <div class="note" id="note"></div>
+  </div>
+</div>
+
+<script>
+// constants
+const LAMBDA = 1.0;
+const R_COMBINED = 0.50;
+
+// world units: meters, canvas px = 80 px/m
+const SCALE_POS = 80;
+const SCALE_VEL = 100; // 1 m/s = 100 px
+
+// state
+const state = {
+  alpha: 1.0,
+  phi: 0.1,
+  a: 0.05,
+  c: 0.1,
+  gamma: 0.5,
+  obsPos: { x: 0, y: 0 },
+  robotPos: { x: 1.5, y: 0.0 },
+  uDes: { x: -1.0, y: 0.5 },  // velocity command (drag this)
+};
+
+const cvPos = document.getElementById('cvPos');
+const ctxPos = cvPos.getContext('2d');
+const cvVel = document.getElementById('cvVel');
+const ctxVel = cvVel.getContext('2d');
+
+const PosOrigin = { x: cvPos.width / 2, y: cvPos.height / 2 };
+const VelOrigin = { x: cvVel.width / 2, y: cvVel.height / 2 };
+
+function w2cPos(p) { return { x: PosOrigin.x + p.x * SCALE_POS, y: PosOrigin.y - p.y * SCALE_POS }; }
+function c2wPos(p) { return { x: (p.x - PosOrigin.x) / SCALE_POS, y: -(p.y - PosOrigin.y) / SCALE_POS }; }
+function w2cVel(p) { return { x: VelOrigin.x + p.x * SCALE_VEL, y: VelOrigin.y - p.y * SCALE_VEL }; }
+function c2wVel(p) { return { x: (p.x - VelOrigin.x) / SCALE_VEL, y: -(p.y - VelOrigin.y) / SCALE_VEL }; }
+
+function compute() {
+  const { robotPos, obsPos, alpha, phi, a, c, gamma } = state;
+  const dx = robotPos.x - obsPos.x, dy = robotPos.y - obsPos.y;
+  const dist = Math.hypot(dx, dy);
+  const sdf = dist - R_COMBINED;
+  const e_i = dist > 1e-6 ? { x: dx / dist, y: dy / dist } : { x: 1, y: 0 };
+  const expTerm = Math.exp(-gamma * sdf);
+  const h = LAMBDA * (1 - expTerm);
+  const Lgh_mag = LAMBDA * gamma * expTerm;
+  const Lgh = { x: Lgh_mag * e_i.x, y: Lgh_mag * e_i.y };
+  const Lgh_normSq = Lgh.x * Lgh.x + Lgh.y * Lgh.y;
+
+  // CBF constraint: Lgh . u >= rhs
+  const rhs = -alpha * (h - c) + phi * Lgh_normSq + a;
+
+  // slack at u_des
+  const slack = Lgh.x * state.uDes.x + Lgh.y * state.uDes.y - rhs;
+
+  // u_safe via half-space projection
+  let uSafe;
+  if (slack >= 0) {
+    uSafe = { x: state.uDes.x, y: state.uDes.y };
+  } else {
+    const lambda_proj = slack / Math.max(Lgh_normSq, 1e-8);
+    uSafe = {
+      x: state.uDes.x - lambda_proj * Lgh.x,
+      y: state.uDes.y - lambda_proj * Lgh.y,
+    };
+  }
+
+  return { dist, sdf, e_i, h, Lgh, Lgh_mag, Lgh_normSq, rhs, slack, uSafe };
+}
+
+function drawArrow(ctx, p1, p2, color, lineWidth) {
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = lineWidth || 2;
+  ctx.beginPath();
+  ctx.moveTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.stroke();
+  // head
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 4) return;
+  const ux = dx / len, uy = dy / len;
+  const headSize = 7;
+  const hx = p2.x - ux * headSize, hy = p2.y - uy * headSize;
+  ctx.beginPath();
+  ctx.moveTo(p2.x, p2.y);
+  ctx.lineTo(hx + uy * headSize * 0.5, hy - ux * headSize * 0.5);
+  ctx.lineTo(hx - uy * headSize * 0.5, hy + ux * headSize * 0.5);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawGrid(ctx, W, H, origin, scale, step) {
+  ctx.strokeStyle = '#e5e5e5';
+  ctx.lineWidth = 1;
+  for (let v = -10; v <= 10; v += step) {
+    const x = origin.x + v * scale;
+    if (x < 0 || x > W) continue;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let v = -10; v <= 10; v += step) {
+    const y = origin.y - v * scale;
+    if (y < 0 || y > H) continue;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.strokeStyle = '#999';
+  ctx.beginPath(); ctx.moveTo(0, origin.y); ctx.lineTo(W, origin.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, H); ctx.stroke();
+}
+
+function drawPosSpace(s) {
+  const W = cvPos.width, H = cvPos.height;
+  ctxPos.clearRect(0, 0, W, H);
+  drawGrid(ctxPos, W, H, PosOrigin, SCALE_POS, 0.5);
+
+  // Minkowski-expanded forbidden zone (orange ring)
+  const oc = w2cPos(state.obsPos);
+  ctxPos.fillStyle = 'rgba(255,153,51,0.15)';
+  ctxPos.strokeStyle = 'rgba(255,153,51,0.6)';
+  ctxPos.setLineDash([5, 4]);
+  ctxPos.beginPath();
+  ctxPos.arc(oc.x, oc.y, R_COMBINED * SCALE_POS, 0, 2 * Math.PI);
+  ctxPos.fill(); ctxPos.stroke();
+  ctxPos.setLineDash([]);
+
+  // obstacle (red, geometry only — 0.35m)
+  ctxPos.fillStyle = '#cc2222';
+  ctxPos.strokeStyle = '#660000';
+  ctxPos.lineWidth = 1.5;
+  ctxPos.beginPath();
+  ctxPos.arc(oc.x, oc.y, 0.35 * SCALE_POS, 0, 2 * Math.PI);
+  ctxPos.fill(); ctxPos.stroke();
+
+  // robot (blue circle, 0.15m)
+  const rc = w2cPos(state.robotPos);
+  ctxPos.fillStyle = 'rgba(51,102,204,0.5)';
+  ctxPos.strokeStyle = '#003388';
+  ctxPos.beginPath();
+  ctxPos.arc(rc.x, rc.y, 0.15 * SCALE_POS, 0, 2 * Math.PI);
+  ctxPos.fill(); ctxPos.stroke();
+
+  // e_i arrow (orange, unit vector — drawn at scale 0.5m for visibility)
+  const eiTip = {
+    x: state.robotPos.x + s.e_i.x * 0.5,
+    y: state.robotPos.y + s.e_i.y * 0.5,
+  };
+  drawArrow(ctxPos, rc, w2cPos(eiTip), '#cc7700', 3);
+  // label
+  ctxPos.fillStyle = '#cc7700';
+  ctxPos.font = '12px sans-serif';
+  const eiLabel = w2cPos({ x: eiTip.x + s.e_i.x * 0.05, y: eiTip.y + s.e_i.y * 0.05 });
+  ctxPos.fillText('e_i', eiLabel.x + 4, eiLabel.y);
+
+  // L_g h arrow (purple, scaled by magnitude — but needs visibility scale)
+  const visScale = 1.5; // visual amplification
+  const LghTip = {
+    x: state.robotPos.x + s.Lgh.x * visScale,
+    y: state.robotPos.y + s.Lgh.y * visScale,
+  };
+  drawArrow(ctxPos, rc, w2cPos(LghTip), '#aa00aa', 2);
+  ctxPos.fillStyle = '#aa00aa';
+  const LghLabel = w2cPos({ x: LghTip.x, y: LghTip.y - 0.05 });
+  ctxPos.fillText('L_g h', LghLabel.x + 4, LghLabel.y);
+
+  // robot center dot
+  ctxPos.fillStyle = '#003388';
+  ctxPos.beginPath(); ctxPos.arc(rc.x, rc.y, 3, 0, 2 * Math.PI); ctxPos.fill();
+}
+
+function drawVelSpace(s) {
+  const W = cvVel.width, H = cvVel.height;
+  ctxVel.clearRect(0, 0, W, H);
+  drawGrid(ctxVel, W, H, VelOrigin, SCALE_VEL, 0.5);
+
+  // CBF half-plane: Lgh . u >= rhs
+  // boundary line: Lgh . u = rhs
+  // In 2D: line perpendicular to Lgh, passing through (rhs/||Lgh||²) * Lgh
+  if (s.Lgh_normSq > 1e-10) {
+    // closest point on boundary to origin
+    const nearest = { x: s.rhs / s.Lgh_normSq * s.Lgh.x, y: s.rhs / s.Lgh_normSq * s.Lgh.y };
+    // direction perpendicular to Lgh (the boundary line direction)
+    const perp = { x: -s.Lgh.y, y: s.Lgh.x };
+    const perpNorm = Math.hypot(perp.x, perp.y);
+    const perpUnit = { x: perp.x / perpNorm, y: perp.y / perpNorm };
+
+    const lineLen = 5;
+    const p1 = { x: nearest.x - perpUnit.x * lineLen, y: nearest.y - perpUnit.y * lineLen };
+    const p2 = { x: nearest.x + perpUnit.x * lineLen, y: nearest.y + perpUnit.y * lineLen };
+
+    // shaded unsafe side
+    const Lgh_unit = { x: s.Lgh.x / Math.sqrt(s.Lgh_normSq), y: s.Lgh.y / Math.sqrt(s.Lgh_normSq) };
+    // unsafe direction = -Lgh
+    const farUnsafe = { x: nearest.x - Lgh_unit.x * 5, y: nearest.y - Lgh_unit.y * 5 };
+    const c1 = w2cVel(p1), c2 = w2cVel(p2);
+    const cFar1 = w2cVel({ x: farUnsafe.x - perpUnit.x * lineLen, y: farUnsafe.y - perpUnit.y * lineLen });
+    const cFar2 = w2cVel({ x: farUnsafe.x + perpUnit.x * lineLen, y: farUnsafe.y + perpUnit.y * lineLen });
+
+    ctxVel.fillStyle = 'rgba(204,34,34,0.10)';
+    ctxVel.beginPath();
+    ctxVel.moveTo(c1.x, c1.y);
+    ctxVel.lineTo(c2.x, c2.y);
+    ctxVel.lineTo(cFar2.x, cFar2.y);
+    ctxVel.lineTo(cFar1.x, cFar1.y);
+    ctxVel.closePath();
+    ctxVel.fill();
+
+    // boundary line
+    ctxVel.strokeStyle = '#cc2222';
+    ctxVel.setLineDash([5, 4]);
+    ctxVel.lineWidth = 2;
+    ctxVel.beginPath();
+    ctxVel.moveTo(c1.x, c1.y);
+    ctxVel.lineTo(c2.x, c2.y);
+    ctxVel.stroke();
+    ctxVel.setLineDash([]);
+
+    // L_g h vector from origin (showing the half-plane's normal)
+    const LghTipVel = { x: s.Lgh.x * 0.8, y: s.Lgh.y * 0.8 };
+    drawArrow(ctxVel, w2cVel({ x: 0, y: 0 }), w2cVel(LghTipVel), '#aa00aa', 1.5);
+    ctxVel.fillStyle = '#aa00aa';
+    ctxVel.font = '11px sans-serif';
+    const tipL = w2cVel(LghTipVel);
+    ctxVel.fillText('L_g h', tipL.x + 4, tipL.y - 4);
+  }
+
+  // u_des arrow
+  const uDesC = w2cVel(state.uDes);
+  drawArrow(ctxVel, w2cVel({ x: 0, y: 0 }), uDesC, '#0a7', 3);
+  ctxVel.fillStyle = '#0a7';
+  ctxVel.font = 'bold 12px sans-serif';
+  ctxVel.fillText('u_des', uDesC.x + 8, uDesC.y);
+
+  // u_safe arrow (only if different from u_des)
+  const diff = Math.hypot(s.uSafe.x - state.uDes.x, s.uSafe.y - state.uDes.y);
+  if (diff > 0.01) {
+    const uSafeC = w2cVel(s.uSafe);
+    drawArrow(ctxVel, w2cVel({ x: 0, y: 0 }), uSafeC, '#a04', 3);
+    ctxVel.fillStyle = '#a04';
+    ctxVel.fillText('u_safe', uSafeC.x + 8, uSafeC.y + 12);
+
+    // dashed line from u_des to u_safe (the projection)
+    const cD = w2cVel(state.uDes);
+    const cS = w2cVel(s.uSafe);
+    ctxVel.strokeStyle = '#a04';
+    ctxVel.setLineDash([3, 3]);
+    ctxVel.lineWidth = 1.5;
+    ctxVel.beginPath();
+    ctxVel.moveTo(cD.x, cD.y); ctxVel.lineTo(cS.x, cS.y);
+    ctxVel.stroke();
+    ctxVel.setLineDash([]);
+  }
+
+  // u_des draggable handle
+  ctxVel.fillStyle = '#0a7';
+  ctxVel.beginPath(); ctxVel.arc(uDesC.x, uDesC.y, 6, 0, 2 * Math.PI); ctxVel.fill();
+  ctxVel.strokeStyle = 'white';
+  ctxVel.lineWidth = 2;
+  ctxVel.stroke();
+
+  // labels
+  ctxVel.fillStyle = '#666';
+  ctxVel.font = '10px sans-serif';
+  ctxVel.fillText('u_x →', VelOrigin.x + 5, VelOrigin.y - 4);
+  ctxVel.fillText('u_y ↑', VelOrigin.x + 5, VelOrigin.y + 14);
+}
+
+function update() {
+  const s = compute();
+  drawPosSpace(s);
+  drawVelSpace(s);
+
+  const filteredFlag = Math.hypot(s.uSafe.x - state.uDes.x, s.uSafe.y - state.uDes.y) > 0.01;
+  document.getElementById('readout').textContent =
+`distance:        ${s.dist.toFixed(3)} m
+sdf (= dist−R):  ${s.sdf.toFixed(3)} m
+h(x):            ${s.h.toFixed(3)}
+e_i:             (${s.e_i.x.toFixed(2)}, ${s.e_i.y.toFixed(2)})
+‖L_g h‖:         ${Math.sqrt(s.Lgh_normSq).toFixed(3)}
+rhs:             ${s.rhs.toFixed(3)}
+slack:           ${s.slack.toFixed(3)}  (${s.slack >= 0 ? '✓ safe' : '✗ unsafe'})
+u_des:           (${state.uDes.x.toFixed(2)}, ${state.uDes.y.toFixed(2)})
+u_safe:          (${s.uSafe.x.toFixed(2)}, ${s.uSafe.y.toFixed(2)})
+filtered?        ${filteredFlag ? 'YES' : 'no'}`;
+
+  // explanatory note
+  let note = '';
+  if (s.dist > 3) {
+    note = 'Robot is far from obstacle: ‖L_g h‖ tiny (exp warp suppresses it). CBF barely fires. u_safe ≈ u_des.';
+  } else if (s.dist < R_COMBINED + 0.05) {
+    note = 'Robot is at/inside contact: h ≤ 0, the CBF demands u_safe move strongly along e_i (away from obstacle). If u_des points the wrong way, the projection is large.';
+  } else if (filteredFlag) {
+    note = 'CBF actively projecting: u_des violated the constraint, u_safe is the closest velocity that satisfies it. Notice u_safe ⊥ to the boundary line, parallel to L_g h.';
+  } else {
+    note = 'u_des satisfies the constraint already. No projection needed. As you move u_des into the red zone, you\'ll see the projection kick in.';
+  }
+  document.getElementById('note').textContent = note;
+}
+
+// dragging in position space
+let dragPos = false;
+cvPos.addEventListener('mousedown', (e) => {
+  const r = cvPos.getBoundingClientRect();
+  state.robotPos = c2wPos({ x: e.clientX - r.left, y: e.clientY - r.top });
+  dragPos = true;
+  update();
+});
+cvPos.addEventListener('mousemove', (e) => {
+  if (!dragPos) return;
+  const r = cvPos.getBoundingClientRect();
+  state.robotPos = c2wPos({ x: e.clientX - r.left, y: e.clientY - r.top });
+  update();
+});
+
+// dragging in velocity space
+let dragVel = false;
+cvVel.addEventListener('mousedown', (e) => {
+  const r = cvVel.getBoundingClientRect();
+  state.uDes = c2wVel({ x: e.clientX - r.left, y: e.clientY - r.top });
+  dragVel = true;
+  update();
+});
+cvVel.addEventListener('mousemove', (e) => {
+  if (!dragVel) return;
+  const r = cvVel.getBoundingClientRect();
+  state.uDes = c2wVel({ x: e.clientX - r.left, y: e.clientY - r.top });
+  update();
+});
+
+window.addEventListener('mouseup', () => { dragPos = false; dragVel = false; });
+
+// sliders
+function bindSlider(id, key) {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    state[key] = parseFloat(el.value);
+    document.getElementById(id + 'Val').textContent = state[key].toFixed(2);
+    update();
+  });
+}
+bindSlider('alpha', 'alpha');
+bindSlider('phi', 'phi');
+bindSlider('a', 'a');
+bindSlider('c', 'c');
+bindSlider('gamma', 'gamma');
+
+update();
+</script>
+</body>
+</html>

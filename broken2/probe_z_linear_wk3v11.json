@@ -1,0 +1,102 @@
+{
+  "task": "Isaac-CBF-Go2-RMA-Layer3-RMAv11-v0",
+  "checkpoint": "/home/chrisliang/Desktop/safety-go2/IsaacLab/logs/rsl_rl/cbf_go2_teacher_rma/2026-05-20_11-43-29/model_2999.pt",
+  "n_envs": 256,
+  "n_rollout_steps": 100,
+  "n_samples_total": 25600,
+  "n_train": 20480,
+  "n_test": 5120,
+  "z_dim": 16,
+  "priv_features": [
+    "friction",
+    "base_mass",
+    "base_height",
+    "force_x",
+    "force_y",
+    "force_z",
+    "torque_x",
+    "torque_y",
+    "torque_z",
+    "tracking_x",
+    "tracking_y",
+    "tracking_z",
+    "com_x",
+    "com_y",
+    "com_z",
+    "actuation_noise_sigma"
+  ],
+  "linear_probe": {
+    "friction": {
+      "r2_train": 0.5601939211070166,
+      "r2_test": 0.5658594824839602,
+      "mse_test": 0.028051450995658145,
+      "feature_std": 0.2541923522949219
+    },
+    "base_mass": {
+      "r2_train": 0.42956358902882685,
+      "r2_test": 0.4374437344586741,
+      "mse_test": 0.7766782569613431,
+      "feature_std": 1.1749992370605469
+    },
+    "force_x": {
+      "r2_train": 0.5906400667916407,
+      "r2_test": 0.5934160205507661,
+      "mse_test": 13.294528075367634,
+      "feature_std": 5.718226432800293
+    },
+    "force_y": {
+      "r2_train": 0.4253723255618992,
+      "r2_test": 0.4339087514046205,
+      "mse_test": 19.986548780280277,
+      "feature_std": 5.941904544830322
+    },
+    "force_z": {
+      "r2_train": 0.6839092146200796,
+      "r2_test": 0.6798169221246404,
+      "mse_test": 10.564048242619823,
+      "feature_std": 5.744020938873291
+    },
+    "torque_x": {
+      "r2_train": 0.7076319813825473,
+      "r2_test": 0.7007401457294065,
+      "mse_test": 0.4234068477092583,
+      "feature_std": 1.189473271369934
+    },
+    "torque_y": {
+      "r2_train": 0.2514930671708874,
+      "r2_test": 0.2335305128841073,
+      "mse_test": 0.9527451328607535,
+      "feature_std": 1.1149128675460815
+    },
+    "torque_z": {
+      "r2_train": 0.4313195355992987,
+      "r2_test": 0.418162916728241,
+      "mse_test": 0.7707715545918645,
+      "feature_std": 1.1509650945663452
+    },
+    "com_x": {
+      "r2_train": 0.6258702335292208,
+      "r2_test": 0.6345400222300641,
+      "mse_test": 0.0002944579155334242,
+      "feature_std": 0.028385182842612267
+    },
+    "com_y": {
+      "r2_train": 0.41718583871490655,
+      "r2_test": 0.42309958035808426,
+      "mse_test": 0.00048620726299608476,
+      "feature_std": 0.02903088554739952
+    },
+    "com_z": {
+      "r2_train": 0.2648994916575551,
+      "r2_test": 0.26739243307545113,
+      "mse_test": 0.000227010937748572,
+      "feature_std": 0.017603039741516113
+    },
+    "actuation_noise_sigma": {
+      "r2_train": 0.06070362484259395,
+      "r2_test": 0.05915303251920023,
+      "mse_test": 6.12666685829268e-05,
+      "feature_std": 0.008069612085819244
+    }
+  }
+}

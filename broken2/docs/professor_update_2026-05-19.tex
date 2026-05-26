@@ -1,0 +1,243 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage[margin=1in]{geometry}
+\usepackage{parskip}
+
+\title{Professor Update — Framework Snapshot}
+\author{Chris Liang}
+\date{2026-05-19}
+
+\begin{document}
+\maketitle
+
+\section*{Headline}
+
+Snapshot of the current training/eval framework. Two adaptive CBF parameters ($\alpha$, $\phi$); $a$, $c$ frozen as hyperparameters; $b$ permanently off (SOCP). Single training distribution with within-episode regime structure. Two eval environments mirroring training vs deploy-realistic conditions. Four hand-coded + learned baselines (B0/B1/B2/BR). Reporting four-axis Pareto (completion / safety / efficiency / smoothness) rather than a single composite.
+
+\section*{Architecture}
+
+\begin{itemize}
+\item \textbf{Two-level hierarchical setup}: PPO teacher outputs CBF parameters $\to$ hard half-space CBF projection $\to$ frozen Isaac Lab locomotion policy (12-DoF joint targets) $\to$ Go2 physics.
+\item \textbf{Action space}: 5-D $(\alpha, \phi, a, b, c)$ raw values; tanh-scaled to physical ranges in \texttt{\_cbf\_filter}; $b$ always zero (SOCP off).
+\item \textbf{Teacher observation}: split into two paths:
+  \begin{itemize}
+  \item \emph{Dynamics path} ($33$-D): friction, base mass, base height, applied force/torque, $5$-step tracking\_err history, base angular velocity, COM offset, $\sigma_\text{act}$, $\delta_R$ stats. $\to$ MLP $\to z_\text{priv}$ ($8$-D).
+  \item \emph{Grid path} ($2 \times 64 \times 64 = 8192$-D): ego-centric occupancy grid, $0.1$\,m cells, $6.4$\,m FOV, stacked as (current, $t{-}10$) for temporal awareness (RING-BUFFER-LEN $=10$, $0.2$\,s frame dilation). $\to$ CNN (two stride-2 conv layers) $\to z_\text{grid}$ ($64$-D).
+  \end{itemize}
+  $z_\text{priv} + z_\text{grid} + \text{proprio}$ concatenated $\to \pi_\text{teacher}$ MLP $\to$ action.
+\item \textbf{CBF QP}: closed-form half-space projection (single linear inequality given $b{=}0$). RHS: $-\alpha(h - c) + \phi \|L_g h\|^2 + a$. $u_\text{safe}$ clamped to $\pm 2$\,m/s lateral.
+\item \textbf{Locomotion}: frozen JIT module, takes $u_\text{safe} +$ proprio history $\to$ joint targets. Not trained.
+\end{itemize}
+
+\section*{Domain randomization}
+
+Two tiers:
+
+\textbf{Per-episode constants} (sampled at reset, held for 1000 steps):
+\begin{center}
+\begin{tabular}{@{}l l@{}}
+\toprule
+Axis & Range \\
+\midrule
+Friction (static)              & $(0.20, 1.30)$ \\
+Friction (dynamic)             & $(0.15, 1.10)$ \\
+Base mass adder                & default LAYER3 \\
+COM offset xy / z              & $\pm 5$\,cm / $\pm 3$\,cm \\
+Base external force / torque   & $\pm 10$\,N / $\pm 2$\,Nm \\
+Push event amplitude           & $\pm 1.0$\,m/s every $5$--$10$\,s (within-ep events) \\
+Scene type                     & corridor ($y_\text{center}=0.48$) with prob $0.5$; else open scatter \\
+Obstacle positions             & randomized at reset; $30\%$ move at $0$--$0.3$\,m/s \\
+Obstacle radius perception err & uniform per-episode bias \\
+$\delta_R$ (perception bias)   & per-episode constant in priv obs \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Within-episode regime resampling} (re-sampled every $K$ steps within an episode):
+\begin{center}
+\begin{tabular}{@{}l l@{}}
+\toprule
+Axis & Resample interval \\
+\midrule
+$\sigma_\text{act}$ regime ($\mathcal{U}(0, \sigma_\text{max,curriculum})$) & every $250$ steps ($5$\,s) \\
+$\phi$ output (windowed lock; policy re-emits) & every $250$ steps ($5$\,s) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Per-step noise} (fresh every control step):
+\begin{itemize}
+\item $\epsilon_\text{act} \sim \mathcal{N}(0, \sigma_\text{act}^2)$ on $u_\text{safe}$, $50\%$ pure Gaussian $+$ $50\%$ structured along $-\nabla h$ (post-QP adversarial component).
+\item Push event impulses when triggered.
+\end{itemize}
+
+\textbf{Curriculum on $\sigma_\text{act}$}: ramps $\sigma_\text{max}$ from $0.05$ to $0.30$ over the first $18000$ control steps ($\sim 1/6$ of a 3000-iter training run), then holds at $0.30$.
+
+\section*{CBF parameter status}
+
+\begin{center}
+\begin{tabular}{@{}l l l p{2.0in}@{}}
+\toprule
+Param & Status & Range / value & Role \\
+\midrule
+$\alpha$ & adaptive, per-step & $(0.5, 3.0)$ & CBF decay rate; scales $(h - c)$ \\
+$\phi$   & adaptive, windowed @ 5s & $(0, 5)$ & ISSf actuation-uncertainty margin; scales $\|L_g h\|^2$ \\
+$a$      & frozen      & $0.05$ & Dean 2019 additive measurement bias slack \\
+$c$      & clamped     & $-0.05$ (degenerate range) & Perception bias compensation; theory says $c^* = -\delta_R$ \\
+$b$      & permanently off & $0$ & Multiplicative input noise; would require SOCP, blocks closed-form projection \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The $\phi$ windowed lock is a 2026-05-18 framework addition: per-episode $\phi$ output capture at step 0 (from v2.13) blocked within-episode adaptation; windowed lock captures $\phi$ every $K$ steps, replays for the next $K-1$. Configurable via \texttt{phi\_lock\_mode} $\in$ \{per\_episode, windowed, per\_step\}.
+
+\section*{Adaptation timescales}
+
+The four parameters live at different theoretical timescales, and the lock structure now reflects this:
+
+\begin{center}
+\begin{tabular}{@{}l l l@{}}
+\toprule
+Param & Theoretical adaptation timescale & Implementation \\
+\midrule
+$\alpha$ & per-step (tracks instantaneous $h$ and tracking error) & per-step output, no lock \\
+$\phi$   & per-period seconds (tracks $\sigma$ regime, not $\epsilon_t$) & windowed, $5$\,s \\
+$a$      & per-episode (constant measurement bias) & frozen (would need per-episode push DR to release) \\
+$c$      & per-episode ($\delta_R$ is per-episode constant) & clamped (PPO can't fight LLN across episodes for this signal) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Training setup}
+
+\begin{itemize}
+\item \textbf{Algorithm}: PPO via rsl\_rl, default hyperparameters for the cbf\_go2 teacher-rma cfg.
+\item \textbf{Iterations}: $3000$ default, configurable via env var. $1500 \approx 2$\,h, $3000 \approx 4$\,h, $4500 \approx 6$\,h on RTX 5090.
+\item \textbf{Environments}: $4096$ parallel.
+\item \textbf{Episode length}: $20$\,s = $1000$ control steps at $50$\,Hz.
+\item \textbf{Reward stack}: terminal collision ($-100$), terminal fall ($-500$), infeasibility ($-10$/step), TTC penalty ($-1.0$/step when TTC $<0.3$\,s), $u_\text{safe}$ deviation ($-0.1$/step), action rate ($-0.0025$), stuck ($-1.0$/step when $\|v_{xy}\| < 0.15$\,m/s). Goal-reach proxy via displacement $\geq 1.5$\,m from spawn.
+\item \textbf{Diagnostics auto-run after training}: $\phi$ correlation (priv-feature aggregate + within-episode Pearson$(\phi_t, h_t)$ and Pearson$(\phi_t, \|L_g h\|^2_t)$), $\alpha$ correlation, linear $z_\text{priv}$ probe.
+\end{itemize}
+
+\section*{Evaluation setup}
+
+Two eval environments, both with $64$ envs $\times$ $1000$ steps per config:
+
+\begin{center}
+\begin{tabular}{@{}l p{3.6in}@{}}
+\toprule
+Eval env & Purpose \\
+\midrule
+In-dist (= training task) & Tests policy on the distribution it was trained on. Single-locked planner replaces training's bimodal resample; otherwise identical. \\
+FROZEN\_AC\_TRAINMATCH    & Deploy-realistic eval. Inherits planner narrowing from \texttt{DEPLOY\_REALISTIC} (single locked planner, softer push, smooth\_goal $60\%$ / waypoint $25\%$ / mpc $10\%$ / adversarial $5\%$), keeps $a$/$c$ frozen at training values (avoids deploy collapse: untrained $a/c$ heads emit garbage when env releases them, $\to 0.68$ fall rate), restores the training distribution's $\sigma_\text{act}$ regime + corridor scenes + dynamic obstacles + wider friction. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The TRAINMATCH design principle: \emph{narrow the planner side to deploy-realistic, restore the dynamics side to training conditions}. This isolates the policy's adaptation capability from the deploy planner distribution mismatch.
+
+The original \texttt{DEPLOY\_REALISTIC\_FROZEN\_AC} (without TRAINMATCH suffix) still exists for fall-back checks but had two mismatches that depressed BR scores: missing within-episode $\sigma_\text{act}$ regime + missing corridor scenes. Those are restored in TRAINMATCH.
+
+\section*{Baselines}
+
+All four modes run in the same eval loop, swept over an $(\alpha, \phi, \epsilon_0, \lambda)$ grid (alphas $\{0.5, 2.0, 3.0\}$, phis $\{0.5, 2.0\}$, $\epsilon_0$ $\{0.5\}$, $\lambda$ $\{1.0, 3.0\}$).
+
+\begin{center}
+\begin{tabular}{@{}l p{1.5in} p{2.8in}@{}}
+\toprule
+Mode & $\phi$ source & Definition \\
+\midrule
+B0 & $\phi \approx 0$ (constant)           & Plain CBF baseline. Grid-swept $\alpha$. No robustness budget. \\
+B1 & $\phi = $ constant (grid-swept)        & ISSf-CBF baseline. Grid-swept $\alpha + \phi$. \\
+B2 & $\phi(h) = (1/\epsilon_0) \exp(-\lambda h)$ & TISSf-CBF baseline (state-conditional). Grid-swept $\alpha + \epsilon_0 + \lambda$. \emph{Adaptive within-episode}, but only on $h$, with a hand-coded formula. \\
+BR & $\phi$ from trained policy             & RL-tuned adaptive teacher. Reads full $33$-D priv + grid. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The conceptual axis: B0 has no adaptation; B1 has between-episode adaptation only (via $\phi$-grid selection); B2 has within-episode adaptation but only as a hand-coded function of $h$; BR has within-episode adaptation potentially using all priv obs features + spatial grid.
+
+B0/B1/B2 are reported as ``best-of-grid'' — for each mode, the grid point with the highest $j_\text{act}$ is the reported result. This gives the fixed baselines an offline-tuning advantage equivalent to ``the user picked the best fixed config for this distribution.''
+
+\section*{Reporting metrics}
+
+Two layers of metric:
+
+\textbf{Component rates} (each a per-episode Bernoulli, $n=64$ envs per config):
+\begin{itemize}
+\item \texttt{goal\_reach\_rate}, \texttt{fall\_rate}, \texttt{stuck\_rate}, \texttt{collision\_rate} (CBF-detected breach, $h{<}0$), \texttt{collision\_rate\_actual} (physical contact), \texttt{mean\_time\_to\_goal}, \texttt{mean\_v\_xy}, \texttt{mean\_h}, \texttt{mean\_min\_h}, \texttt{avg\_deflection\_mean}, \texttt{avg\_qp\_active\_rate}, \texttt{path\_efficiency}.
+\end{itemize}
+
+\textbf{Composite scores}:
+\begin{itemize}
+\item \emph{Legacy} $j_\text{act} = (1-\text{fall})(1-\text{stuck}) \cdot \text{goal\_reach}$. Three failure modes multiplied; ignores collision rate, speed, margin, intervention rate. Currently the headline number but underweights safety dimensions.
+\item \emph{Four-axis Pareto} (going forward):
+\begin{itemize}
+\item COMPLETION $= \text{goal\_reach\_rate}$
+\item SAFETY $= (1-\text{fall\_rate}) \times (1-\text{collision\_rate\_actual})$
+\item EFFICIENCY $= \text{mean\_v\_xy}$
+\item SMOOTHNESS $= 1 - \text{avg\_qp\_active\_rate}$ (or $1 - $ deflection magnitude)
+\end{itemize}
+\item \emph{Composite safety score} $= \text{goal} \times (1-\text{fall})(1-\text{stuck})(1-\text{coll\_actual})$. Closes the j\_act gap on safety dimensions.
+\end{itemize}
+
+\textbf{Eval variance}: at $n=64$, Bernoulli rates have $\sigma \approx \pm 2.7$\,pp; differences smaller than $\sim 5$\,pp aren't statistically meaningful. Verified via two-seed re-runs.
+
+\section*{Adaptation diagnostics}
+
+Three diagnostic scripts run after every training:
+
+\begin{itemize}
+\item \textbf{$\phi$ correlation diagnostic}: rollout $256$ envs $\times$ $100$ steps. Captures per-step $\phi$, $h(x)$, $\|L_g h\|^2$, full priv obs vector. Computes:
+  \begin{itemize}
+  \item Between-env Pearson$(\phi, \text{feature})$ on time-averaged values for each priv feature.
+  \item Within-episode Pearson$(\phi_t, h_t)$ and $(\phi_t, \|L_g h\|^2_t)$, per-env, then mean $\pm$ std across envs.
+  \item Population $\phi$ stats: between-env mean/std, within-env std.
+  \end{itemize}
+  Gate: $|\text{between-env Pearson}(\phi, \sigma_\text{act})| > 0.20$ (adaptation existence) and $|$within-ep Pearson$(\phi_t, h_t)| > 0.30$ (within-episode tracking strength).
+\item \textbf{$\alpha$ correlation diagnostic}: same rollout structure. Gate: $|\text{Pearson}(\alpha, |\text{tracking\_err}|)| > 0.30$ or $|\text{Pearson}(\alpha, \text{base\_height})| > 0.30$.
+\item \textbf{Linear $z_\text{priv}$ probe}: trains a linear regressor from $z_\text{priv}$ to each priv obs feature. Reports $R^2$ per feature. Confirms the encoder is preserving the priv signal (vs collapsing it).
+\end{itemize}
+
+\section*{Adaptation timescale ledger and credit assignment}
+
+Per-step $\phi$ output gets $\sim 1/1000$ of episode return for credit assignment under PPO — gradient signal washes out in advantage variance over the $800$+ step episodes (the v2.13 LLN/CLT failure). Per-episode lock gives $\sim 1/1$ of return per sample but blocks within-episode adaptation entirely. Windowed lock at $K{=}250$ gives $\sim 1/4$ of return per sample with $4$ samples per episode — credit assignment preserved, within-episode adaptation possible. This is the framework's central design tradeoff.
+
+\section*{What the framework currently can and cannot do}
+
+\textbf{Can}:
+\begin{itemize}
+\item Two-parameter joint adaptation ($\alpha + \phi$) on the same teacher network.
+\item Within-episode adaptation at $5$\,s granularity (regime-matched to real-world friction/$\sigma$ transitions).
+\item Compare against three fixed-baseline classes (B0, B1, B2) using grid-best selection.
+\item Report four-axis Pareto + composite safety score, not just a single number.
+\item Pull diagnostics within minutes of training completion.
+\end{itemize}
+
+\textbf{Cannot (yet)}:
+\begin{itemize}
+\item Release $a$ or $c$ adaptively (theoretical signal is too noisy under PPO for $c$; requires per-episode push-amplitude DR for $a$).
+\item Test $b$-parameter SOCP without losing the closed-form half-space projection.
+\item Student distillation (Phase 2 of RMA pipeline) — teacher uses GT-derived occupancy grid, student would need synthetic-LiDAR pipeline (stubbed but not wired into training).
+\item Hardware deploy: blocked on Mid-360 calibration.
+\end{itemize}
+
+\section*{Open framework questions}
+
+\begin{enumerate}
+\item \textbf{Window size for $\phi$ and $\sigma$ regime}: currently $5$\,s ($250$ steps). Theory says this should match real-world actuation noise regime timescale. We don't have a principled way to set this — open to suggestions on whether $2$\,s or $10$\,s might be better matched to deployment expectations.
+\item \textbf{Single-vs-multi-axis metric reporting}: legacy $j_\text{act}$ is one number, easy to compare. Four-axis Pareto is more honest but requires more figures and harder to claim ``X beats Y.'' Strong opinion on which to use as headline?
+\item \textbf{B2 as a baseline}: B2 is itself within-episode adaptive (hand-coded $\phi(h)$ formula). Reporting BR-vs-B2 is really learned-adaptive vs heuristic-adaptive. Worth distinguishing in the writeup, or fold B2 into ``the strong baseline'' bucket?
+\item \textbf{Curriculum scaling with training length}: $\sigma_\text{act}$ warmup is fixed at $18000$ steps regardless of training length. At $3000$ iters that's $\sim 1/6$ of training in curriculum, $5/6$ at full $\sigma$. At $1500$ iters it's $1/2$ each. Worth scaling warmup with iters, or keep absolute to match deploy time-budget?
+\end{enumerate}
+
+\section*{Status (one-liner)}
+
+V6 training launched 2026-05-19, $3000$ iters, overnight. The framework above is what's in production; V6 is just a parameter setting within it.
+
+\end{document}

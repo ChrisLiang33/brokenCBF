@@ -1,0 +1,18 @@
+{
+  "task": "Isaac-CBF-Go2-RMA-Layer2-v0",
+  "checkpoint": "logs/rsl_rl/cbf_go2_teacher_rma/2026-05-14_19-08-03/model_1499.pt",
+  "n_envs": 256,
+  "n_rollout_steps": 100,
+  "grid_change_stats": {
+    "mean": 0.02709386870265007,
+    "std": 0.02225891500711441,
+    "min": 0.0,
+    "max": 0.142822265625
+  },
+  "correlations": {
+    "alpha_vs_grid_change_per_env": 0.3035,
+    "phi_vs_grid_change_per_env": 0.1365,
+    "alpha_vs_grid_change_flat": 0.116,
+    "phi_vs_grid_change_flat": 0.0244
+  }
+}

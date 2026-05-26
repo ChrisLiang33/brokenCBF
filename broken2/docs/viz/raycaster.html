@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RayCaster & the "one mesh path" problem</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    color: #222;
+    line-height: 1.5;
+  }
+  h1 { border-bottom: 2px solid #333; padding-bottom: .3em; }
+  h2 { color: #444; margin-top: 2em; }
+  .scene-card {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 1rem;
+    margin: 1rem 0;
+    background: #fafafa;
+  }
+  svg {
+    display: block;
+    background: #fff;
+    border: 1px solid #ddd;
+    touch-action: none;
+  }
+  .caption { font-size: .9em; color: #555; margin-top: .5em; }
+  .controls { margin: .5em 0; }
+  button {
+    padding: .4em .8em;
+    margin-right: .4em;
+    border: 1px solid #666;
+    background: #eee;
+    cursor: pointer;
+    font-size: .9em;
+    border-radius: 4px;
+  }
+  button.active {
+    background: #2a6;
+    color: white;
+    border-color: #184;
+  }
+  .legend {
+    font-size: .85em;
+    display: flex;
+    gap: 1.5em;
+    margin: .5em 0;
+  }
+  .swatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+  code { background: #eef; padding: 1px 5px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<h1>RayCaster & the "one mesh path" problem</h1>
+
+<p>Two interactive scenes. Drag the obstacle in scene 1. Switch the RayCaster target in scene 2. Both demos illustrate what Isaac Lab's RayCaster sensor does and the specific limitation we hit.</p>
+
+<!-- =================================================================== -->
+<section class="scene-card">
+<h2>Scene 1 — How RayCaster reads distances</h2>
+
+<p>A robot at the left fires <strong>30 rays</strong> in a 240° arc. Each ray returns the distance to the first thing it hits. Drag the box to see the rays react.</p>
+
+<div class="legend">
+  <span><span class="swatch" style="background: #2a6;"></span>ray hit (shows distance)</span>
+  <span><span class="swatch" style="background: #bbb;"></span>ray miss (goes to infinity)</span>
+  <span><span class="swatch" style="background: #d52;"></span>robot (ray source)</span>
+  <span><span class="swatch" style="background: #669;"></span>obstacle (drag me)</span>
+</div>
+
+<svg id="scene1" viewBox="0 0 800 400" width="800" height="400"></svg>
+
+<p class="caption">Key behavior: each ray <em>stops at the first intersection</em>. Rays can't pass through the box and continue. This matches real LiDAR physics — light doesn't go through opaque surfaces.</p>
+</section>
+
+<!-- =================================================================== -->
+<section class="scene-card">
+<h2>Scene 2 — The "one mesh path" problem</h2>
+
+<p>Three parallel envs, each with a robot and its own local obstacle. In Isaac Lab, <code>RayCaster.mesh_prim_paths</code> only accepts <strong>one path</strong>. Click a button below to pick which env's obstacle the RayCaster is configured to target.</p>
+
+<div class="controls">
+  <button data-target="0" class="active">Target env_0's obstacle</button>
+  <button data-target="1">Target env_1's obstacle</button>
+  <button data-target="2">Target env_2's obstacle</button>
+</div>
+
+<div class="legend">
+  <span><span class="swatch" style="background: #2a6;"></span>ray hit (obstacle is "visible" to RayCaster)</span>
+  <span><span class="swatch" style="background: #e66;"></span>ray passes through (obstacle is "invisible")</span>
+</div>
+
+<svg id="scene2" viewBox="0 0 800 250" width="800" height="250"></svg>
+
+<p class="caption">
+Only the <strong>targeted env's</strong> obstacle appears in RayCaster's BVH — rays hitting it stop at the first intersection.
+For the other two envs, rays pass right through the obstacle as if it weren't there. The obstacles still exist physically (the robots will still collide with them in PhysX) — they're just invisible to the LiDAR sensor.
+</p>
+<p class="caption">
+This is why we hit "only 4 envs actually see the obstacle" in Week 3 — with 4096 parallel envs and a single global obstacle, most robots never got useful rays. The fix was to disable LiDAR entirely for the teacher and feed ground-truth obstacle position directly into priv_obs.
+</p>
+</section>
+
+<script>
+"use strict";
+
+//
+// ========================================================================
+// Ray / box intersection (AABB slab method)
+// ========================================================================
+//
+function rayCastBox(origin, dir, box) {
+  // origin: {x, y}
+  // dir:    {dx, dy}  (unit vector)
+  // box:    {x, y, w, h}  (top-left corner + size)
+  // returns: {hit: bool, t: number}  where t is distance along ray
+  const {x: ox, y: oy} = origin;
+  const {dx, dy} = dir;
+  const inv_dx = dx !== 0 ? 1 / dx : 1e12;
+  const inv_dy = dy !== 0 ? 1 / dy : 1e12;
+  const tx1 = (box.x           - ox) * inv_dx;
+  const tx2 = (box.x + box.w   - ox) * inv_dx;
+  const ty1 = (box.y           - oy) * inv_dy;
+  const ty2 = (box.y + box.h   - oy) * inv_dy;
+  const tmin = Math.max(Math.min(tx1, tx2), Math.min(ty1, ty2));
+  const tmax = Math.min(Math.max(tx1, tx2), Math.max(ty1, ty2));
+  if (tmax >= Math.max(0, tmin)) {
+    return {hit: true, t: tmin >= 0 ? tmin : tmax};
+  }
+  return {hit: false, t: Infinity};
+}
+
+//
+// ========================================================================
+// Scene 1: single robot, draggable obstacle
+// ========================================================================
+//
+(function scene1() {
+  const svg = document.getElementById("scene1");
+  const robot = {x: 90, y: 200};
+  const box = {x: 450, y: 170, w: 80, h: 80};
+  const NUM_RAYS = 30;
+  const ARC_DEG = 240;
+  const MAX_DIST = 700;
+
+  // robot dot
+  const robotEl = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  robotEl.setAttribute("cx", robot.x);
+  robotEl.setAttribute("cy", robot.y);
+  robotEl.setAttribute("r", 10);
+  robotEl.setAttribute("fill", "#d52");
+  svg.appendChild(robotEl);
+
+  // obstacle rect (draggable)
+  const boxEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  boxEl.setAttribute("width", box.w);
+  boxEl.setAttribute("height", box.h);
+  boxEl.setAttribute("fill", "#669");
+  boxEl.setAttribute("rx", 4);
+  boxEl.setAttribute("stroke", "#224");
+  boxEl.setAttribute("stroke-width", 2);
+  boxEl.style.cursor = "grab";
+  svg.appendChild(boxEl);
+
+  // ray group (redrawn each frame)
+  const rayGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  svg.appendChild(rayGroup);
+
+  // distance-label group
+  const labelGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  svg.appendChild(labelGroup);
+
+  function render() {
+    boxEl.setAttribute("x", box.x);
+    boxEl.setAttribute("y", box.y);
+
+    // clear rays/labels
+    while (rayGroup.firstChild) rayGroup.removeChild(rayGroup.firstChild);
+    while (labelGroup.firstChild) labelGroup.removeChild(labelGroup.firstChild);
+
+    // fan out rays in ARC_DEG around "forward" (east = 0 rad)
+    const startAngle = -ARC_DEG / 2 * Math.PI / 180;
+    const step = (ARC_DEG / (NUM_RAYS - 1)) * Math.PI / 180;
+
+    for (let i = 0; i < NUM_RAYS; i++) {
+      const a = startAngle + i * step;
+      const dir = {dx: Math.cos(a), dy: Math.sin(a)};
+      const hit = rayCastBox(robot, dir, box);
+      const dist = hit.hit ? Math.min(hit.t, MAX_DIST) : MAX_DIST;
+      const ex = robot.x + dir.dx * dist;
+      const ey = robot.y + dir.dy * dist;
+
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", robot.x);
+      line.setAttribute("y1", robot.y);
+      line.setAttribute("x2", ex);
+      line.setAttribute("y2", ey);
+      line.setAttribute("stroke", hit.hit ? "#2a6" : "#bbb");
+      line.setAttribute("stroke-width", hit.hit ? 2 : 1);
+      line.setAttribute("stroke-opacity", hit.hit ? 0.9 : 0.35);
+      rayGroup.appendChild(line);
+
+      // put distance label on every 6th ray when it hit
+      if (hit.hit && i % 6 === 0) {
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", ex + dir.dx * 14);
+        label.setAttribute("y", ey + dir.dy * 14 + 4);
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#184");
+        label.textContent = `${(dist / 100).toFixed(2)} m`;
+        labelGroup.appendChild(label);
+      }
+    }
+  }
+
+  // dragging
+  let dragging = false, offsetX = 0, offsetY = 0;
+  boxEl.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    const pt = svgPoint(svg, e);
+    offsetX = pt.x - box.x;
+    offsetY = pt.y - box.y;
+    boxEl.style.cursor = "grabbing";
+    boxEl.setPointerCapture(e.pointerId);
+  });
+  boxEl.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const pt = svgPoint(svg, e);
+    box.x = Math.max(0, Math.min(800 - box.w, pt.x - offsetX));
+    box.y = Math.max(0, Math.min(400 - box.h, pt.y - offsetY));
+    render();
+  });
+  boxEl.addEventListener("pointerup", () => {
+    dragging = false;
+    boxEl.style.cursor = "grab";
+  });
+
+  render();
+})();
+
+function svgPoint(svg, evt) {
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX;
+  pt.y = evt.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+//
+// ========================================================================
+// Scene 2: three envs, only one's obstacle is "targeted" by RayCaster
+// ========================================================================
+//
+(function scene2() {
+  const svg = document.getElementById("scene2");
+  const ENVS = [
+    {cx: 130, robot: {x: 70,  y: 120}, box: {x: 180, y: 90, w: 50, h: 50}},
+    {cx: 400, robot: {x: 340, y: 120}, box: {x: 440, y: 90, w: 50, h: 50}},
+    {cx: 670, robot: {x: 610, y: 120}, box: {x: 700, y: 90, w: 50, h: 50}},
+  ];
+  let target = 0;
+  const NUM_RAYS = 20;
+  const ARC_DEG = 180;
+  const MAX_DIST = 200;
+
+  // draw env dividers & labels
+  for (let i = 0; i < ENVS.length; i++) {
+    if (i > 0) {
+      const div = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      div.setAttribute("x1", i * 800/3);
+      div.setAttribute("y1", 0);
+      div.setAttribute("x2", i * 800/3);
+      div.setAttribute("y2", 250);
+      div.setAttribute("stroke", "#ddd");
+      div.setAttribute("stroke-dasharray", "4 4");
+      svg.appendChild(div);
+    }
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", ENVS[i].cx);
+    label.setAttribute("y", 28);
+    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("font-size", "14");
+    label.setAttribute("fill", "#333");
+    label.setAttribute("font-weight", "bold");
+    label.textContent = `env_${i}`;
+    svg.appendChild(label);
+  }
+
+  // robots and obstacles (static, draw once)
+  for (const env of ENVS) {
+    const r = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    r.setAttribute("cx", env.robot.x);
+    r.setAttribute("cy", env.robot.y);
+    r.setAttribute("r", 8);
+    r.setAttribute("fill", "#d52");
+    svg.appendChild(r);
+
+    const b = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    b.setAttribute("x", env.box.x);
+    b.setAttribute("y", env.box.y);
+    b.setAttribute("width", env.box.w);
+    b.setAttribute("height", env.box.h);
+    b.setAttribute("fill", "#669");
+    b.setAttribute("rx", 3);
+    b.setAttribute("stroke", "#224");
+    b.setAttribute("stroke-width", 1.5);
+    svg.appendChild(b);
+  }
+
+  // ray group (redrawn on target change)
+  const rayGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  svg.appendChild(rayGroup);
+
+  // status label
+  const statusEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  statusEl.setAttribute("x", 400);
+  statusEl.setAttribute("y", 240);
+  statusEl.setAttribute("text-anchor", "middle");
+  statusEl.setAttribute("font-size", "12");
+  statusEl.setAttribute("fill", "#666");
+  statusEl.setAttribute("font-style", "italic");
+  svg.appendChild(statusEl);
+
+  function render() {
+    while (rayGroup.firstChild) rayGroup.removeChild(rayGroup.firstChild);
+
+    for (let envIdx = 0; envIdx < ENVS.length; envIdx++) {
+      const env = ENVS[envIdx];
+      const isTargeted = (envIdx === target);
+
+      const startAngle = -ARC_DEG / 2 * Math.PI / 180;
+      const step = (ARC_DEG / (NUM_RAYS - 1)) * Math.PI / 180;
+
+      for (let i = 0; i < NUM_RAYS; i++) {
+        const a = startAngle + i * step;
+        const dir = {dx: Math.cos(a), dy: Math.sin(a)};
+        let dist;
+        let color;
+
+        if (isTargeted) {
+          // rays stop at box
+          const hit = rayCastBox(env.robot, dir, env.box);
+          dist = hit.hit ? Math.min(hit.t, MAX_DIST) : MAX_DIST;
+          color = hit.hit ? "#2a6" : "#bbb";
+        } else {
+          // rays pass through — full length, red to highlight the problem
+          dist = MAX_DIST;
+          color = "#e66";
+        }
+
+        const ex = env.robot.x + dir.dx * dist;
+        const ey = env.robot.y + dir.dy * dist;
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", env.robot.x);
+        line.setAttribute("y1", env.robot.y);
+        line.setAttribute("x2", ex);
+        line.setAttribute("y2", ey);
+        line.setAttribute("stroke", color);
+        line.setAttribute("stroke-width", isTargeted ? 1.5 : 1);
+        line.setAttribute("stroke-opacity", isTargeted ? 0.8 : 0.4);
+        rayGroup.appendChild(line);
+      }
+    }
+
+    statusEl.textContent =
+      `RayCaster.mesh_prim_paths = ["/World/env_${target}/Obstacle"]`;
+  }
+
+  // button handlers
+  document.querySelectorAll("[data-target]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      target = parseInt(btn.dataset.target);
+      document.querySelectorAll("[data-target]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      render();
+    });
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>

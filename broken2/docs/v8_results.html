@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>V8 full report — PHIWIN_TIGHTCOR_V8, 2026-05-19</title>
+<style>
+:root {
+  --br: #d62728; --fixed: #1f77b4; --neg: #ff7f0e; --grey: #888;
+  --green: #2ca02c; --bg: #fafafa; --panel: #fff; --border: #d8d8d8;
+  --text: #222; --muted: #666; --note-bg: #fff7e6; --note-border: #cc9933;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text);
+       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+       margin: 0; padding: 28px 32px; font-size: 14px; line-height: 1.5;
+       max-width: 1400px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h1 small { color: var(--muted); font-weight: normal; font-size: 13px; }
+h2.section { font-size: 16px; margin: 28px 0 10px; padding-bottom: 4px;
+             border-bottom: 2px solid var(--border); color: #234; }
+h2.section .num { color: var(--muted); margin-right: 6px; }
+.sub { color: var(--muted); margin-bottom: 14px; font-size: 13px; }
+p { margin: 8px 0; }
+code { background: #eee; padding: 1px 5px; border-radius: 3px;
+       font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.summary { background: #eef6ff; border: 1px solid #99c2ff; border-radius: 6px;
+           padding: 12px 16px; margin: 8px 0 16px; font-size: 13px; }
+.summary b { color: #0b3d91; }
+.summary ul { margin: 4px 0 4px 18px; padding: 0; }
+.summary li { margin: 3px 0; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+@media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--border);
+         border-radius: 6px; padding: 14px 18px 16px; }
+.panel.wide { grid-column: 1 / -1; }
+.panel h2 { font-size: 14px; margin: 0 0 8px;
+            border-bottom: 1px solid #eee; padding-bottom: 5px; }
+.panel h2 small { color: var(--muted); font-weight: normal; font-size: 12px; margin-left: 6px; }
+.subgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 1100px) { .subgrid { grid-template-columns: 1fr; } }
+.subpanel { border: 1px solid #eee; border-radius: 4px; padding: 8px 10px; background: #fcfcfc; }
+.subhead { font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.subdesc { font-size: 11px; color: var(--muted); margin-bottom: 8px; line-height: 1.3; }
+.row { display: grid; grid-template-columns: 140px 1fr 52px; align-items: center;
+       gap: 7px; margin: 3px 0; font-size: 12px; }
+.row .label { text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+              font-size: 11px; }
+.row.br .label { font-weight: bold; color: var(--br); }
+.row .barwrap { background: #f0f0f0; height: 13px; border-radius: 2px; overflow: hidden; }
+.row .bar { height: 100%; }
+.row .val { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+.row.br .val { font-weight: bold; color: var(--br); }
+.corr-row { display: grid; grid-template-columns: 150px 1fr 56px; align-items: center;
+            gap: 8px; margin: 3px 0; font-size: 13px; }
+.corr-row .label { text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.corr-row .val { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+.corr-axis { position: relative; height: 16px; }
+.corr-axis::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%;
+                     width: 1px; background: #888; }
+.corr-bar { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; }
+.axis { display: grid; grid-template-columns: 150px 1fr 56px; gap: 8px;
+        color: var(--muted); font-size: 10px; margin-top: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.axis .ticks { position: relative; height: 11px; }
+.axis .tick { position: absolute; transform: translateX(-50%); }
+.pair-row { margin: 10px 0; }
+.pair-row .pair-label { font-size: 12px; font-weight: 600; margin-bottom: 2px;
+                        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.pair-row .pair-desc { font-size: 11px; color: var(--muted); margin-bottom: 4px;
+                       line-height: 1.3; }
+.pair-row .bars { display: grid; grid-template-columns: 36px 1fr 50px;
+                  gap: 6px; align-items: center; margin: 2px 0; }
+.pair-row .pair-name { font-size: 11px; color: var(--muted); text-align: right;
+                       font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.pair-row .pair-barwrap { background: #f0f0f0; height: 12px; border-radius: 2px; overflow: hidden; }
+.pair-row .pair-bar { height: 100%; }
+.pair-row .v5 { background: var(--grey); }
+.pair-row .v8 { background: var(--br); }
+.pair-row .pair-val { font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.legend { font-size: 11px; color: var(--muted); margin-top: 8px;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.legend .swatch { display: inline-block; width: 10px; height: 10px;
+                  vertical-align: middle; margin: 0 4px 0 12px; border: 1px solid #888; }
+.legend .swatch:first-child { margin-left: 0; }
+.note { background: var(--note-bg); border: 1px solid var(--note-border);
+        border-radius: 4px; padding: 7px 10px; margin-top: 10px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px; color: #553300; }
+.ranktable { background: #fff; border: 1px solid var(--border); border-radius: 6px;
+             padding: 10px 14px; }
+.ranktable .subhead { margin-bottom: 6px; font-size: 13px; color: #234; }
+.ranktable table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ranktable th, .ranktable td { padding: 5px 8px; text-align: left;
+                               border-bottom: 1px solid #eee; }
+.ranktable th { background: #f5f5f5; font-weight: 600; }
+.ranktable .rank-cell { font-weight: bold; }
+.ranktable .rank-cell.top { color: var(--green); }
+.ranktable .rank-cell.bad { color: var(--neg); }
+.caveat { background: #fff8f8; border: 1px solid #f5b5b5; border-radius: 4px;
+          padding: 8px 12px; margin: 8px 0; }
+.caveat b { color: #a02020; }
+.config { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+          background: #f5f5f5; padding: 10px 12px; border-radius: 4px;
+          border: 1px solid #ddd; line-height: 1.6; }
+.config .key { color: #234; }
+.toc { background: #f5f5f5; border-left: 3px solid #234; padding: 8px 14px;
+       margin-bottom: 16px; font-size: 12px; }
+.toc a { color: #234; text-decoration: none; margin-right: 14px; }
+.toc a:hover { text-decoration: underline; }
+</style></head><body>
+
+<h1>V8 — PHIWIN_TIGHTCOR_V8 <small>2026-05-19 · 2500 iters · 4096 envs · per-step φ · no lock · SHIELD c-comp at −0.10</small></h1>
+<div class="sub">Full report on the adaptive teacher run that closed the lock question. Multi-axis Pareto evaluation, head diagnostics, encoder probe, and lock-removal comparison vs V5 baseline.</div>
+
+<div class="toc">
+  <b>Sections:</b>
+  <a href="#tldr">TL;DR</a>
+  <a href="#what">What V8 is</a>
+  <a href="#eval">Multi-axis eval</a>
+  <a href="#rank">BR rank summary</a>
+  <a href="#heads">Head diagnostics</a>
+  <a href="#encoder">Encoder probe</a>
+  <a href="#lock">Lock removal</a>
+  <a href="#shared">Shared signal</a>
+  <a href="#caveats">Caveats</a>
+  <a href="#verdict">Verdict</a>
+</div>
+
+<h2 class="section" id="tldr"><span class="num">1.</span>TL;DR</h2>
+<div class="summary">
+  <ul>
+    <li><b>BR matches oracle best fixed on trainmatch</b> (tied at safety_score ≈ 0.77, BR is the only 100% completion config).</li>
+    <li><b>BR LOSES on OOD</b> — rank 8/16 by safety_score, dominated by B0 α=2 (0.722 vs BR 0.626). V16-era reversal pattern is back. Fall rate 3× higher than B0, collision rate 8.7pp higher.</li>
+    <li><b>BR loses in-dist</b> too (rank 4) — low-hedge fixed wins where deploy ≈ train.</li>
+    <li><b>The φ lock was unnecessary AND harmful</b> — V8 fixed it (within-env std 4.6×, σ_act sensitivity unmasked).</li>
+    <li><b>z_priv encoder is healthy</b> — σ_act R²=0.58, COM R²~0.52. Bottleneck shifted from encoder to head.</li>
+    <li><b>Shared-signal analysis (partial regression) found:</b>
+      <ul>
+        <li><i>tracking_err</i> and <i>base_height</i> dominate BOTH heads (β≈+0.28 and ≈+0.35 respectively). Heads partially coupled at the env level.</li>
+        <li>φ DOES have independent σ_act loading (β=−0.17, t=−3.0). Theory-correct, but small effect.</li>
+        <li>Within-episode, α reads tracking_err AND h_t; φ reads h_t only. Heads ARE differentiated step-to-step.</li>
+        <li><i>friction, mass, COM</i> all have β ≈ 0 — encoder sees them, heads ignore them. The bottleneck is at the head, not z_priv.</li>
+      </ul></li>
+    <li><b>Honest read on the paper:</b> trainmatch win is real but narrow. OOD loss means the "adaptive teacher generalizes to deploy" story is NOT supported. V9 — strip tracking_err + base_height from priv — is the necessary next experiment.</li>
+  </ul>
+</div>
+
+<h2 class="section" id="what"><span class="num">2.</span>What V8 is</h2>
+<p>V8 is the SHIELD-corrected, per-step-φ training of the adaptive CBF teacher. Single-variable derivation from V5:</p>
+<div class="config">
+<span class="key">V5 → V7:</span> c clamp range changed from (−0.05, −0.05) to (−0.10, −0.10).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Reason: SHIELD synthetic-LiDAR clustering inflates every perceived obstacle by +0.10m.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c clamp = −0.10 fully cancels this; V5's −0.05 only undid half.<br>
+<span class="key">V7 → V8:</span> phi_lock_mode = "windowed" → "per_step".<br>
+&nbsp;&nbsp;&nbsp;&nbsp;V7 still locked φ for 250-step (5s) windows. V8 lets φ vary every control step.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Open question Test 1 confirmed: lock was hurting deploy. V8 verifies from-scratch training.<br>
+<span class="key">Everything else from V5:</span> α head adaptive, α_param_range = (0.5, 3.0), φ_param_range = (0.5, 2.0),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;within-episode σ_act regime resampled at 5s windows, freeze_alpha_value = None,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;split priv-MLP + grid-CNN encoder, RMA teacher-student, PPO.<br>
+<span class="key">Train length:</span> 2500 iters, 4096 envs, ~3.3h on lab box RTX 5090.<br>
+<span class="key">Ckpt:</span> logs/rsl_rl/cbf_go2_teacher_rma/2026-05-19_14-18-46/model_2499.pt
+</div>
+
+<h2 class="section" id="eval"><span class="num">3.</span>Multi-axis evaluation</h2>
+<p>Three eval distributions:</p>
+<ul>
+  <li><b>Trainmatch</b> (deploy-realistic, DR matches training): tests robustness to the deploy distribution we trained for. Includes tight corridors, full σ_act range, c=−0.10, adversarial QP noise.</li>
+  <li><b>In-dist</b> (DR matches training, training-task obstacle scatter): a pure sanity check that the policy works in the regime it was trained on.</li>
+  <li><b>OOD</b> (deploy-realistic, NOT matched to training): default obstacle scatter (no tight corridors), narrow σ_act range, c=−0.05 (SHIELD perception bias UNcompensated), no adversarial QP noise. This is the closest thing we have to "novel deploy distribution".</li>
+</ul>
+<p>Six axes per eval. The single safety_score collapse used earlier hides trade-offs — these panels show them directly. BR (red) vs top 8 fixed baselines per axis. ★ marks BR.</p>
+
+<div class="grid">
+  <div class="panel wide"><h2>Trainmatch eval (DEPLOY-REALISTIC, matches training) <small>BR is rank 1 in completion; pays cost on path/deflection — ties best fixed on safety_score</small></h2><div class="subgrid"><div class="subpanel"><div class="subhead">Completion <span style="color:#1f77b4;font-size:11px;">(↑ higher = better)</span></div><div class="subdesc">Fraction of episodes reaching the goal in time.</div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:98.0%;background:#d62728;"></div></div><span class="val">1.000</span></div><div class="row"><span class="label">B1 α=3.0, φ=2.0</span><div class="barwrap"><div class="bar" style="width:98.0%;background:#1f77b4;"></div></div><span class="val">0.984</span></div><div class="row"><span class="label">B2 α=2.0, λ=3</span><div class="barwrap"><div class="bar" style="width:98.0%;background:#1f77b4;"></div></div><span class="val">0.984</span></div><div class="row"><span class="label">B2 α=3.0, λ=3</span><div class="barwrap"><div class="bar" style="width:98.0%;background:#1f77b4;"></div></div><span class="val">0.984</span></div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:95.5%;background:#1f77b4;"></div></div><span class="val">0.955</span></div><div class="row"><span class="label">B1 α=0.5, φ=0.5</span><div class="barwrap"><div class="bar" style="width:95.4%;background:#1f77b4;"></div></div><span class="val">0.954</span></div><div class="row"><span class="label">B1 α=2.0, φ=2.0</span><div class="barwrap"><div class="bar" style="width:93.9%;background:#1f77b4;"></div></div><span class="val">0.939</span></div><div class="row"><span class="label">B2 α=2.0, λ=1</span><div class="barwrap"><div class="bar" style="width:92.5%;background:#1f77b4;"></div></div><span class="val">0.925</span></div></div><div class="subpanel"><div class="subhead">Collision (actual) <span style="color:#ff7f0e;font-size:11px;">(↓ lower = better)</span></div><div class="subdesc">Fraction of episodes with a TRUE collision (post hoc, ground-truth wall contact). Distinct from perceived collisions from synthetic LiDAR clusters.</div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:16.4%;background:#ff7f0e;"></div></div><span class="val">0.164</span></div><div class="row"><span class="label">B2 α=2.0, λ=1</span><div class="barwrap"><div class="bar" style="width:19.4%;background:#ff7f0e;"></div></div><span class="val">0.194</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:19.7%;background:#ff7f0e;"></div></div><span class="val">0.197</span></div><div class="row"><span class="label">B2 α=2.0, λ=3</span><div class="barwrap"><div class="bar" style="width:21.9%;background:#ff7f0e;"></div></div><span class="val">0.219</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:22.1%;background:#d62728;"></div></div><span class="val">0.221</span></div><div class="row"><span class="label">B2 α=0.5, λ=1</span><div class="barwrap"><div class="bar" style="width:22.7%;background:#ff7f0e;"></div></div><span class="val">0.227</span></div><div class="row"><span class="label">B1 α=3.0, φ=2.0</span><div class="barwrap"><div class="bar" style="width:23.4%;background:#ff7f0e;"></div></div><span class="val">0.234</span></div><div class="row"><span class="label">B2 α=3.0, λ=1</span><div class="barwrap"><div class="bar" style="width:23.4%;background:#ff7f0e;"></div></div><span class="val">0.234</span></div></div><div class="subpanel"><div class="subhead">Fall rate <span style="color:#ff7f0e;font-size:11px;">(↓ lower = better)</span></div><div class="subdesc">Fraction of episodes where the robot's base tips past the safe roll/pitch threshold.</div><div class="row"><span class="label">B1 α=0.5, φ=0.5</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B1 α=0.5, φ=2.0</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B1 α=3.0, φ=2.0</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B2 α=0.5, λ=1</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B2 α=0.5, λ=3</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B2 α=2.0, λ=3</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B1 α=3.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:1.5%;background:#ff7f0e;"></div></div><span class="val">0.015</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:1.5%;background:#d62728;"></div></div><span class="val">0.015</span></div></div><div class="subpanel"><div class="subhead">Path efficiency <span style="color:#1f77b4;font-size:11px;">(↑ higher = better)</span></div><div class="subdesc">Final displacement / total path length. Higher = less wandering.</div><div class="row"><span class="label">B0 α=0.5</span><div class="barwrap"><div class="bar" style="width:60.8%;background:#1f77b4;"></div></div><span class="val">0.608</span></div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:60.4%;background:#1f77b4;"></div></div><span class="val">0.604</span></div><div class="row"><span class="label">B1 α=0.5, φ=0.5</span><div class="barwrap"><div class="bar" style="width:60.3%;background:#1f77b4;"></div></div><span class="val">0.603</span></div><div class="row"><span class="label">B2 α=2.0, λ=1</span><div class="barwrap"><div class="bar" style="width:58.8%;background:#1f77b4;"></div></div><span class="val">0.588</span></div><div class="row"><span class="label">B1 α=3.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:58.7%;background:#1f77b4;"></div></div><span class="val">0.587</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:58.3%;background:#1f77b4;"></div></div><span class="val">0.583</span></div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:57.0%;background:#1f77b4;"></div></div><span class="val">0.570</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:49.3%;background:#d62728;"></div></div><span class="val">0.493</span></div></div><div class="subpanel"><div class="subhead">Time to goal (s) <span style="color:#ff7f0e;font-size:11px;">(↓ lower = better)</span></div><div class="subdesc">Mean wall-clock seconds to reach the goal for successful episodes.</div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:43.2%;background:#ff7f0e;"></div></div><span class="val">112.444</span></div><div class="row"><span class="label">B1 α=3.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:43.9%;background:#ff7f0e;"></div></div><span class="val">114.017</span></div><div class="row"><span class="label">B2 α=3.0, λ=3</span><div class="barwrap"><div class="bar" style="width:44.9%;background:#ff7f0e;"></div></div><span class="val">116.857</span></div><div class="row"><span class="label">B1 α=3.0, φ=2.0</span><div class="barwrap"><div class="bar" style="width:46.9%;background:#ff7f0e;"></div></div><span class="val">121.968</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:47.6%;background:#ff7f0e;"></div></div><span class="val">123.750</span></div><div class="row"><span class="label">B2 α=2.0, λ=3</span><div class="barwrap"><div class="bar" style="width:48.5%;background:#ff7f0e;"></div></div><span class="val">126.079</span></div><div class="row"><span class="label">B2 α=3.0, λ=1</span><div class="barwrap"><div class="bar" style="width:48.8%;background:#ff7f0e;"></div></div><span class="val">126.965</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:55.7%;background:#d62728;"></div></div><span class="val">144.735</span></div></div><div class="subpanel"><div class="subhead">Deflection ‖u_safe − u_nominal‖ <span style="color:#ff7f0e;font-size:11px;">(↓ lower = better)</span></div><div class="subdesc">Average magnitude of the safety filter's correction to the teleop command. Lower = the CBF intervenes less, smoother control.</div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:23.3%;background:#ff7f0e;"></div></div><span class="val">0.187</span></div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:25.7%;background:#ff7f0e;"></div></div><span class="val">0.206</span></div><div class="row"><span class="label">B1 α=3.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:27.5%;background:#ff7f0e;"></div></div><span class="val">0.220</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:30.1%;background:#ff7f0e;"></div></div><span class="val">0.241</span></div><div class="row"><span class="label">B0 α=0.5</span><div class="barwrap"><div class="bar" style="width:37.6%;background:#ff7f0e;"></div></div><span class="val">0.301</span></div><div class="row"><span class="label">B1 α=0.5, φ=0.5</span><div class="barwrap"><div class="bar" style="width:54.3%;background:#ff7f0e;"></div></div><span class="val">0.434</span></div><div class="row"><span class="label">B2 α=3.0, λ=1</span><div class="barwrap"><div class="bar" style="width:56.4%;background:#ff7f0e;"></div></div><span class="val">0.452</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:79.0%;background:#d62728;"></div></div><span class="val">0.632</span></div></div></div></div>
+</div>
+<div class="grid" style="margin-top:16px;">
+  <div class="panel wide"><h2>In-dist eval (DEPLOY = TRAIN) <small>BR is rank 1 in completion; low-α B0 dominates efficiency axes</small></h2><div class="subgrid"><div class="subpanel"><div class="subhead">Completion <span style="color:#1f77b4;font-size:11px;">(↑ higher = better)</span></div><div class="subdesc">Fraction of episodes reaching the goal in time.</div><div class="row"><span class="label">B2 α=3.0, λ=3</span><div class="barwrap"><div class="bar" style="width:95.8%;background:#1f77b4;"></div></div><span class="val">0.958</span></div><div class="row"><span class="label">B2 α=2.0, λ=1</span><div class="barwrap"><div class="bar" style="width:95.7%;background:#1f77b4;"></div></div><span class="val">0.957</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:94.2%;background:#1f77b4;"></div></div><span class="val">0.942</span></div><div class="row"><span class="label">B1 α=2.0, φ=2.0</span><div class="barwrap"><div class="bar" style="width:92.8%;background:#1f77b4;"></div></div><span class="val">0.928</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:92.5%;background:#d62728;"></div></div><span class="val">0.925</span></div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:92.4%;background:#1f77b4;"></div></div><span class="val">0.924</span></div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:91.9%;background:#1f77b4;"></div></div><span class="val">0.919</span></div><div class="row"><span class="label">B1 α=3.0, φ=2.0</span><div class="barwrap"><div class="bar" style="width:91.5%;background:#1f77b4;"></div></div><span class="val">0.915</span></div></div><div class="subpanel"><div class="subhead">Collision (actual) <span style="color:#ff7f0e;font-size:11px;">(↓ lower = better)</span></div><div class="subdesc">Fraction of episodes with a TRUE collision (post hoc, ground-truth wall contact). Distinct from perceived collisions from synthetic LiDAR clusters.</div><div class="row"><span class="label">B0 α=0.5</span><div class="barwrap"><div class="bar" style="width:18.2%;background:#ff7f0e;"></div></div><span class="val">0.182</span></div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:21.2%;background:#ff7f0e;"></div></div><span class="val">0.212</span></div><div class="row"><span class="label">B2 α=2.0, λ=3</span><div class="barwrap"><div class="bar" style="width:26.5%;background:#ff7f0e;"></div></div><span class="val">0.265</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:28.4%;background:#d62728;"></div></div><span class="val">0.284</span></div><div class="row"><span class="label">B1 α=0.5, φ=0.5</span><div class="barwrap"><div class="bar" style="width:29.4%;background:#ff7f0e;"></div></div><span class="val">0.294</span></div><div class="row"><span class="label">B1 α=0.5, φ=2.0</span><div class="barwrap"><div class="bar" style="width:31.4%;background:#ff7f0e;"></div></div><span class="val">0.314</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:31.9%;background:#ff7f0e;"></div></div><span class="val">0.319</span></div><div class="row"><span class="label">B2 α=2.0, λ=1</span><div class="barwrap"><div class="bar" style="width:32.9%;background:#ff7f0e;"></div></div><span class="val">0.329</span></div></div><div class="subpanel"><div class="subhead">Fall rate <span style="color:#ff7f0e;font-size:11px;">(↓ lower = better)</span></div><div class="subdesc">Fraction of episodes where the robot's base tips past the safe roll/pitch threshold.</div><div class="row"><span class="label">B0 α=0.5</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B1 α=3.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B2 α=0.5, λ=3</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:1.4%;background:#ff7f0e;"></div></div><span class="val">0.014</span></div><div class="row"><span class="label">B2 α=2.0, λ=1</span><div class="barwrap"><div class="bar" style="width:1.4%;background:#ff7f0e;"></div></div><span class="val">0.014</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:1.4%;background:#ff7f0e;"></div></div><span class="val">0.014</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:6.0%;background:#d62728;"></div></div><span class="val">0.060</span></div></div><div class="subpanel"><div class="subhead">Path efficiency <span style="color:#1f77b4;font-size:11px;">(↑ higher = better)</span></div><div class="subdesc">Final displacement / total path length. Higher = less wandering.</div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:64.5%;background:#1f77b4;"></div></div><span class="val">0.645</span></div><div class="row"><span class="label">B1 α=0.5, φ=0.5</span><div class="barwrap"><div class="bar" style="width:64.2%;background:#1f77b4;"></div></div><span class="val">0.642</span></div><div class="row"><span class="label">B0 α=0.5</span><div class="barwrap"><div class="bar" style="width:63.0%;background:#1f77b4;"></div></div><span class="val">0.630</span></div><div class="row"><span class="label">B2 α=3.0, λ=1</span><div class="barwrap"><div class="bar" style="width:62.7%;background:#1f77b4;"></div></div><span class="val">0.627</span></div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:62.6%;background:#1f77b4;"></div></div><span class="val">0.626</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:60.2%;background:#1f77b4;"></div></div><span class="val">0.602</span></div><div class="row"><span class="label">B2 α=3.0, λ=3</span><div class="barwrap"><div class="bar" style="width:59.7%;background:#1f77b4;"></div></div><span class="val">0.597</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:51.6%;background:#d62728;"></div></div><span class="val">0.516</span></div></div><div class="subpanel"><div class="subhead">Time to goal (s) <span style="color:#ff7f0e;font-size:11px;">(↓ lower = better)</span></div><div class="subdesc">Mean wall-clock seconds to reach the goal for successful episodes.</div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:47.3%;background:#ff7f0e;"></div></div><span class="val">122.984</span></div><div class="row"><span class="label">B2 α=2.0, λ=3</span><div class="barwrap"><div class="bar" style="width:49.5%;background:#ff7f0e;"></div></div><span class="val">128.600</span></div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:49.5%;background:#ff7f0e;"></div></div><span class="val">128.765</span></div><div class="row"><span class="label">B1 α=3.0, φ=2.0</span><div class="barwrap"><div class="bar" style="width:53.1%;background:#ff7f0e;"></div></div><span class="val">138.092</span></div><div class="row"><span class="label">B1 α=3.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:53.4%;background:#ff7f0e;"></div></div><span class="val">138.825</span></div><div class="row"><span class="label">B2 α=3.0, λ=3</span><div class="barwrap"><div class="bar" style="width:54.6%;background:#ff7f0e;"></div></div><span class="val">141.971</span></div><div class="row"><span class="label">B0 α=0.5</span><div class="barwrap"><div class="bar" style="width:57.8%;background:#ff7f0e;"></div></div><span class="val">150.217</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:63.6%;background:#d62728;"></div></div><span class="val">165.468</span></div></div><div class="subpanel"><div class="subhead">Deflection ‖u_safe − u_nominal‖ <span style="color:#ff7f0e;font-size:11px;">(↓ lower = better)</span></div><div class="subdesc">Average magnitude of the safety filter's correction to the teleop command. Lower = the CBF intervenes less, smoother control.</div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:20.7%;background:#ff7f0e;"></div></div><span class="val">0.166</span></div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:22.6%;background:#ff7f0e;"></div></div><span class="val">0.181</span></div><div class="row"><span class="label">B1 α=3.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:25.0%;background:#ff7f0e;"></div></div><span class="val">0.200</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:30.3%;background:#ff7f0e;"></div></div><span class="val">0.243</span></div><div class="row"><span class="label">B0 α=0.5</span><div class="barwrap"><div class="bar" style="width:40.7%;background:#ff7f0e;"></div></div><span class="val">0.325</span></div><div class="row"><span class="label">B1 α=0.5, φ=0.5</span><div class="barwrap"><div class="bar" style="width:45.3%;background:#ff7f0e;"></div></div><span class="val">0.362</span></div><div class="row"><span class="label">B2 α=3.0, λ=1</span><div class="barwrap"><div class="bar" style="width:53.8%;background:#ff7f0e;"></div></div><span class="val">0.430</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:67.0%;background:#d62728;"></div></div><span class="val">0.536</span></div></div></div></div>
+</div>
+<div class="grid" style="margin-top:16px;">
+  <div class="panel wide"><h2>OOD eval (DEPLOY ≠ TRAIN, c=−0.05 uncompensated) <small>BR rank 8/16 by safety_score — adaptive teacher LOSES on OOD</small></h2><div class="subgrid"><div class="subpanel"><div class="subhead">Completion <span style="color:#1f77b4;font-size:11px;">(↑ higher = better)</span></div><div class="subdesc">Fraction of episodes reaching the goal in time.</div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:97.0%;background:#1f77b4;"></div></div><span class="val">0.970</span></div><div class="row"><span class="label">B2 α=3.0, λ=1</span><div class="barwrap"><div class="bar" style="width:96.9%;background:#1f77b4;"></div></div><span class="val">0.969</span></div><div class="row"><span class="label">B1 α=3.0, φ=2.0</span><div class="barwrap"><div class="bar" style="width:95.4%;background:#1f77b4;"></div></div><span class="val">0.954</span></div><div class="row"><span class="label">B2 α=2.0, λ=3</span><div class="barwrap"><div class="bar" style="width:92.6%;background:#1f77b4;"></div></div><span class="val">0.926</span></div><div class="row"><span class="label">B2 α=3.0, λ=3</span><div class="barwrap"><div class="bar" style="width:92.6%;background:#1f77b4;"></div></div><span class="val">0.926</span></div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:92.4%;background:#1f77b4;"></div></div><span class="val">0.924</span></div><div class="row"><span class="label">B2 α=2.0, λ=1</span><div class="barwrap"><div class="bar" style="width:92.2%;background:#1f77b4;"></div></div><span class="val">0.922</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:91.0%;background:#d62728;"></div></div><span class="val">0.910</span></div></div><div class="subpanel"><div class="subhead">Collision (actual) <span style="color:#ff7f0e;font-size:11px;">(↓ lower = better)</span></div><div class="subdesc">Fraction of episodes with a TRUE collision (post hoc, ground-truth wall contact). Distinct from perceived collisions from synthetic LiDAR clusters.</div><div class="row"><span class="label">B0 α=0.5</span><div class="barwrap"><div class="bar" style="width:13.2%;background:#ff7f0e;"></div></div><span class="val">0.132</span></div><div class="row"><span class="label">B1 α=0.5, φ=0.5</span><div class="barwrap"><div class="bar" style="width:13.6%;background:#ff7f0e;"></div></div><span class="val">0.136</span></div><div class="row"><span class="label">B1 α=2.0, φ=2.0</span><div class="barwrap"><div class="bar" style="width:16.4%;background:#ff7f0e;"></div></div><span class="val">0.164</span></div><div class="row"><span class="label">B2 α=0.5, λ=3</span><div class="barwrap"><div class="bar" style="width:17.2%;background:#ff7f0e;"></div></div><span class="val">0.172</span></div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:18.2%;background:#ff7f0e;"></div></div><span class="val">0.182</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:18.2%;background:#ff7f0e;"></div></div><span class="val">0.182</span></div><div class="row"><span class="label">B2 α=2.0, λ=1</span><div class="barwrap"><div class="bar" style="width:18.8%;background:#ff7f0e;"></div></div><span class="val">0.188</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:26.9%;background:#d62728;"></div></div><span class="val">0.269</span></div></div><div class="subpanel"><div class="subhead">Fall rate <span style="color:#ff7f0e;font-size:11px;">(↓ lower = better)</span></div><div class="subdesc">Fraction of episodes where the robot's base tips past the safe roll/pitch threshold.</div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B1 α=0.5, φ=2.0</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B1 α=3.0, φ=2.0</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B2 α=0.5, λ=3</span><div class="barwrap"><div class="bar" style="width:0.0%;background:#ff7f0e;"></div></div><span class="val">0.000</span></div><div class="row"><span class="label">B2 α=2.0, λ=3</span><div class="barwrap"><div class="bar" style="width:1.5%;background:#ff7f0e;"></div></div><span class="val">0.015</span></div><div class="row"><span class="label">B2 α=3.0, λ=3</span><div class="barwrap"><div class="bar" style="width:1.5%;background:#ff7f0e;"></div></div><span class="val">0.015</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:4.5%;background:#d62728;"></div></div><span class="val">0.045</span></div></div><div class="subpanel"><div class="subhead">Path efficiency <span style="color:#1f77b4;font-size:11px;">(↑ higher = better)</span></div><div class="subdesc">Final displacement / total path length. Higher = less wandering.</div><div class="row"><span class="label">B2 α=2.0, λ=3</span><div class="barwrap"><div class="bar" style="width:60.7%;background:#1f77b4;"></div></div><span class="val">0.607</span></div><div class="row"><span class="label">B1 α=0.5, φ=0.5</span><div class="barwrap"><div class="bar" style="width:59.9%;background:#1f77b4;"></div></div><span class="val">0.599</span></div><div class="row"><span class="label">B1 α=3.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:59.6%;background:#1f77b4;"></div></div><span class="val">0.596</span></div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:59.4%;background:#1f77b4;"></div></div><span class="val">0.594</span></div><div class="row"><span class="label">B0 α=0.5</span><div class="barwrap"><div class="bar" style="width:59.0%;background:#1f77b4;"></div></div><span class="val">0.590</span></div><div class="row"><span class="label">B2 α=0.5, λ=1</span><div class="barwrap"><div class="bar" style="width:58.3%;background:#1f77b4;"></div></div><span class="val">0.583</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:56.7%;background:#1f77b4;"></div></div><span class="val">0.567</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:53.4%;background:#d62728;"></div></div><span class="val">0.534</span></div></div><div class="subpanel"><div class="subhead">Time to goal (s) <span style="color:#ff7f0e;font-size:11px;">(↓ lower = better)</span></div><div class="subdesc">Mean wall-clock seconds to reach the goal for successful episodes.</div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:43.3%;background:#ff7f0e;"></div></div><span class="val">112.531</span></div><div class="row"><span class="label">B1 α=3.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:44.6%;background:#ff7f0e;"></div></div><span class="val">115.867</span></div><div class="row"><span class="label">B2 α=3.0, λ=3</span><div class="barwrap"><div class="bar" style="width:45.0%;background:#ff7f0e;"></div></div><span class="val">116.889</span></div><div class="row"><span class="label">B2 α=2.0, λ=1</span><div class="barwrap"><div class="bar" style="width:47.0%;background:#ff7f0e;"></div></div><span class="val">122.119</span></div><div class="row"><span class="label">B1 α=3.0, φ=2.0</span><div class="barwrap"><div class="bar" style="width:47.5%;background:#ff7f0e;"></div></div><span class="val">123.484</span></div><div class="row"><span class="label">B2 α=3.0, λ=1</span><div class="barwrap"><div class="bar" style="width:48.8%;background:#ff7f0e;"></div></div><span class="val">126.887</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:51.3%;background:#ff7f0e;"></div></div><span class="val">133.283</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:66.2%;background:#d62728;"></div></div><span class="val">172.049</span></div></div><div class="subpanel"><div class="subhead">Deflection ‖u_safe − u_nominal‖ <span style="color:#ff7f0e;font-size:11px;">(↓ lower = better)</span></div><div class="subdesc">Average magnitude of the safety filter's correction to the teleop command. Lower = the CBF intervenes less, smoother control.</div><div class="row"><span class="label">B0 α=3.0</span><div class="barwrap"><div class="bar" style="width:24.8%;background:#ff7f0e;"></div></div><span class="val">0.198</span></div><div class="row"><span class="label">B0 α=2.0</span><div class="barwrap"><div class="bar" style="width:35.7%;background:#ff7f0e;"></div></div><span class="val">0.286</span></div><div class="row"><span class="label">B0 α=0.5</span><div class="barwrap"><div class="bar" style="width:37.0%;background:#ff7f0e;"></div></div><span class="val">0.296</span></div><div class="row"><span class="label">B2 α=2.0, λ=3</span><div class="barwrap"><div class="bar" style="width:38.6%;background:#ff7f0e;"></div></div><span class="val">0.309</span></div><div class="row"><span class="label">B2 α=3.0, λ=3</span><div class="barwrap"><div class="bar" style="width:40.0%;background:#ff7f0e;"></div></div><span class="val">0.320</span></div><div class="row"><span class="label">B1 α=2.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:40.8%;background:#ff7f0e;"></div></div><span class="val">0.326</span></div><div class="row"><span class="label">B1 α=3.0, φ=0.5</span><div class="barwrap"><div class="bar" style="width:42.6%;background:#ff7f0e;"></div></div><span class="val">0.341</span></div><div class="row br"><span class="label">BR (V8 teacher) ★</span><div class="barwrap"><div class="bar" style="width:73.1%;background:#d62728;"></div></div><span class="val">0.585</span></div></div></div></div>
+</div>
+
+<h2 class="section" id="rank"><span class="num">4.</span>BR rank summary across 3 evals</h2>
+<div class="grid">
+  <div class="ranktable"><div class="subhead">Trainmatch eval (deploy ≈ train)</div><table><thead><tr><th>Axis</th><th>BR value</th><th>BR rank</th><th>Best (config)</th></tr></thead><tbody><tr><td>Completion</td><td><b>1.000</b></td><td class="rank-cell top">1 / 16</td><td>1.000 (BR (V8 teacher))</td></tr><tr><td>Collision (actual)</td><td><b>0.221</b></td><td class="rank-cell bad">5 / 16</td><td>0.164 (B0 α=3.0)</td></tr><tr><td>Fall rate</td><td><b>0.015</b></td><td class="rank-cell bad">8 / 16</td><td>0.000 (B1 α=0.5, φ=0.5)</td></tr><tr><td>Path efficiency</td><td><b>0.493</b></td><td class="rank-cell bad">16 / 16</td><td>0.608 (B0 α=0.5)</td></tr><tr><td>Time to goal (s)</td><td><b>144.735</b></td><td class="rank-cell bad">11 / 16</td><td>112.444 (B0 α=2.0)</td></tr><tr><td>Deflection ‖u_safe − u_nominal‖</td><td><b>0.632</b></td><td class="rank-cell bad">13 / 16</td><td>0.187 (B0 α=3.0)</td></tr></tbody></table></div>
+  <div class="ranktable"><div class="subhead">In-dist eval (deploy = train)</div><table><thead><tr><th>Axis</th><th>BR value</th><th>BR rank</th><th>Best (config)</th></tr></thead><tbody><tr><td>Completion</td><td><b>0.925</b></td><td class="rank-cell bad">5 / 16</td><td>0.958 (B2 α=3.0, λ=3)</td></tr><tr><td>Collision (actual)</td><td><b>0.284</b></td><td class="rank-cell">4 / 16</td><td>0.182 (B0 α=0.5)</td></tr><tr><td>Fall rate</td><td><b>0.060</b></td><td class="rank-cell bad">16 / 16</td><td>0.000 (B0 α=0.5)</td></tr><tr><td>Path efficiency</td><td><b>0.516</b></td><td class="rank-cell bad">16 / 16</td><td>0.645 (B0 α=2.0)</td></tr><tr><td>Time to goal (s)</td><td><b>165.468</b></td><td class="rank-cell bad">10 / 16</td><td>122.984 (B0 α=2.0)</td></tr><tr><td>Deflection ‖u_safe − u_nominal‖</td><td><b>0.536</b></td><td class="rank-cell bad">13 / 16</td><td>0.166 (B0 α=3.0)</td></tr></tbody></table></div>
+</div>
+<div class="grid" style="margin-top:16px;">
+  <div class="ranktable"><div class="subhead">OOD eval (deploy ≠ train)</div><table><thead><tr><th>Axis</th><th>BR value</th><th>BR rank</th><th>Best (config)</th></tr></thead><tbody><tr><td>Completion</td><td><b>0.910</b></td><td class="rank-cell bad">8 / 16</td><td>0.970 (B0 α=3.0)</td></tr><tr><td>Collision (actual)</td><td><b>0.269</b></td><td class="rank-cell bad">9 / 16</td><td>0.132 (B0 α=0.5)</td></tr><tr><td>Fall rate</td><td><b>0.045</b></td><td class="rank-cell bad">14 / 16</td><td>0.000 (B0 α=3.0)</td></tr><tr><td>Path efficiency</td><td><b>0.534</b></td><td class="rank-cell bad">12 / 16</td><td>0.607 (B2 α=2.0, λ=3)</td></tr><tr><td>Time to goal (s)</td><td><b>172.049</b></td><td class="rank-cell bad">14 / 16</td><td>112.531 (B0 α=3.0)</td></tr><tr><td>Deflection ‖u_safe − u_nominal‖</td><td><b>0.585</b></td><td class="rank-cell bad">15 / 16</td><td>0.198 (B0 α=3.0)</td></tr></tbody></table></div>
+  <div class="panel"><h2>Summary: where adaptation pays off</h2>
+    <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:6px;">
+      <thead><tr style="background:#f5f5f5;"><th style="padding:5px;text-align:left">Eval</th><th style="padding:5px;text-align:right">BR safety_score</th><th style="padding:5px;text-align:right">Best fixed</th><th style="padding:5px;text-align:left">Verdict</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:5px">Trainmatch</td><td style="padding:5px;text-align:right;font-weight:bold">0.768</td><td style="padding:5px;text-align:right">0.769 (B2 α=2 λ=3)</td><td style="padding:5px;color:#1f77b4">tied with oracle</td></tr>
+        <tr><td style="padding:5px">In-dist</td><td style="padding:5px;text-align:right">0.614</td><td style="padding:5px;text-align:right;font-weight:bold">0.710 (B0 α=0.5)</td><td style="padding:5px;color:#a02020">BR loses (−9.6pp)</td></tr>
+        <tr><td style="padding:5px">OOD</td><td style="padding:5px;text-align:right">0.626</td><td style="padding:5px;text-align:right;font-weight:bold">0.722 (B0 α=2)</td><td style="padding:5px;color:#a02020">BR loses (−9.6pp)</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px; margin-top:10px; color:#444;">
+      BR only wins where the eval distribution matches what it was trained for.
+      On both in-dist and OOD, fixed-α B0 baselines win. The adaptive teacher
+      <b>does not yet generalize across deploy distributions</b> — same pattern
+      as V16-era results.</p>
+  </div>
+</div>
+
+<h2 class="section" id="heads"><span class="num">5.</span>Adaptation head diagnostics</h2>
+<p>What signals are α and φ actually attending to? Bars show between-env Pearson
+correlation; orange box at the bottom of each panel shows the within-episode correlations
+(per-step within a single rollout).</p>
+
+<div class="grid">
+  <div class="panel"><h2>What φ attends to</h2><div class="subdesc">φ controls the actuation-uncertainty margin: φ‖L_g h‖² in the CBF constraint. Theory (Kolathaya ISSf / TISSf) says φ should rise with actuation noise σ_act and with proximity to barrier (h ↓).</div><div class="corr-row"><span class="label">|tracking_err|</span><div class="corr-axis"><div class="corr-bar pos" style="left:50%;width:35.3%;background:#d62728;"></div></div><span class="val">+0.35</span></div><div class="corr-row"><span class="label">base_height</span><div class="corr-axis"><div class="corr-bar pos" style="left:50%;width:28.2%;background:#d62728;"></div></div><span class="val">+0.28</span></div><div class="corr-row"><span class="label">actuation_noise_sigma</span><div class="corr-axis"><div class="corr-bar neg" style="right:50%;width:19.8%;background:#ff7f0e;"></div></div><span class="val">−0.20</span></div><div class="corr-row"><span class="label">com_y</span><div class="corr-axis"><div class="corr-bar neg" style="right:50%;width:10.3%;background:#ff7f0e;"></div></div><span class="val">−0.10</span></div><div class="corr-row"><span class="label">friction</span><div class="corr-axis"><div class="corr-bar neg" style="right:50%;width:7.4%;background:#ff7f0e;"></div></div><span class="val">−0.07</span></div><div class="corr-row"><span class="label">com_x</span><div class="corr-axis"><div class="corr-bar neg" style="right:50%;width:5.4%;background:#ff7f0e;"></div></div><span class="val">−0.05</span></div><div class="axis"><span></span><div class="ticks"><span class="tick" style="left:0%">−0.5</span><span class="tick" style="left:25%">−0.25</span><span class="tick" style="left:50%">0</span><span class="tick" style="left:75%">+0.25</span><span class="tick" style="left:100%">+0.5</span></div><span></span></div><div class="note"><b>Within-episode (Pearson φ_t vs signal_t):</b><br>φ_t vs h_t = <b>+0.16</b> <i>(opposite of TISSf shape — TISSf says φ ↑ when h ↓; V8 says φ ↑ when h ↑. V5 was −0.10 under lock.)</i><br>φ_t vs ‖L_g h‖²_t = -0.15</div></div>
+  <div class="panel"><h2>What α attends to</h2><div class="subdesc">α controls the CBF recovery rate: ḣ ≥ −α(h − c). Theory: low α when tracking is poor (don't push to the limit); high α when tracking is clean.</div><div class="corr-row"><span class="label">base_height</span><div class="corr-axis"><div class="corr-bar pos" style="left:50%;width:38.6%;background:#1f77b4;"></div></div><span class="val">+0.39</span></div><div class="corr-row"><span class="label">|tracking_err|</span><div class="corr-axis"><div class="corr-bar pos" style="left:50%;width:35.5%;background:#1f77b4;"></div></div><span class="val">+0.36</span></div><div class="corr-row"><span class="label">com_y</span><div class="corr-axis"><div class="corr-bar neg" style="right:50%;width:13.8%;background:#ff7f0e;"></div></div><span class="val">−0.14</span></div><div class="corr-row"><span class="label">actuation_noise_sigma</span><div class="corr-axis"><div class="corr-bar neg" style="right:50%;width:12.4%;background:#ff7f0e;"></div></div><span class="val">−0.12</span></div><div class="corr-row"><span class="label">com_z</span><div class="corr-axis"><div class="corr-bar pos" style="left:50%;width:11.4%;background:#1f77b4;"></div></div><span class="val">+0.11</span></div><div class="corr-row"><span class="label">base_mass</span><div class="corr-axis"><div class="corr-bar neg" style="right:50%;width:5.9%;background:#ff7f0e;"></div></div><span class="val">−0.06</span></div><div class="axis"><span></span><div class="ticks"><span class="tick" style="left:0%">−0.5</span><span class="tick" style="left:25%">−0.25</span><span class="tick" style="left:50%">0</span><span class="tick" style="left:75%">+0.25</span><span class="tick" style="left:100%">+0.5</span></div><span></span></div><div class="note"><b>Within-episode (Pearson α_t vs signal_t):</b><br>α_t vs h_t = <b>+0.29</b> &nbsp;&nbsp; α_t vs |tracking_err|_t = <b>+0.21</b><br>α_t vs |base_ang_vel|_t = +0.06 &nbsp;&nbsp; α_t vs σ_act = +0.01</div></div>
+</div>
+
+<div class="caveat" style="margin-top:14px;">
+  <b>Surprise:</b> Both heads' strongest between-env signal is <code>|tracking_err|</code>
+  (+0.35 for φ, +0.36 for α). σ_act — φ's textbook signal — is third for φ and basically
+  zero for α. φ's within-episode shape is the wrong sign for TISSf. Interpretation: both
+  heads learned to use the same "things are bad / things are fine" proxy (tracking error
+  is the easiest within-episode signal that survives LLN washout over 800 steps).
+</div>
+
+<h2 class="section" id="encoder"><span class="num">6.</span>z_priv encoder probe</h2>
+<p>Train a linear regression z_priv → priv feature, measure test R². Tells us
+whether the priv encoder bottleneck is starving any head of necessary information.</p>
+<div class="grid">
+  <div class="panel"><h2>z_priv linear-probe R²_test <small>green = previously blind (V16 R²&lt;0.05), now decoded</small></h2><div class="subdesc">Train a linear map z_priv → each priv feature, measure R². Tells us what the privileged encoder is bottlenecking.</div><div class="row"><span class="label">base height</span><div class="barwrap"><div class="bar" style="width:85.3%;background:#1f77b4;"></div></div><span class="val">0.85</span></div><div class="row"><span class="label">actuation noise σ</span><div class="barwrap"><div class="bar" style="width:58.4%;background:#2ca02c;"></div></div><span class="val">0.58</span></div><div class="row"><span class="label">com x</span><div class="barwrap"><div class="bar" style="width:53.6%;background:#2ca02c;"></div></div><span class="val">0.54</span></div><div class="row"><span class="label">com z</span><div class="barwrap"><div class="bar" style="width:52.5%;background:#2ca02c;"></div></div><span class="val">0.52</span></div><div class="row"><span class="label">com y</span><div class="barwrap"><div class="bar" style="width:52.1%;background:#2ca02c;"></div></div><span class="val">0.52</span></div><div class="row"><span class="label">tracking x</span><div class="barwrap"><div class="bar" style="width:50.1%;background:#1f77b4;"></div></div><span class="val">0.50</span></div><div class="row"><span class="label">tracking z</span><div class="barwrap"><div class="bar" style="width:49.1%;background:#1f77b4;"></div></div><span class="val">0.49</span></div><div class="row"><span class="label">tracking y</span><div class="barwrap"><div class="bar" style="width:47.8%;background:#1f77b4;"></div></div><span class="val">0.48</span></div><div class="row"><span class="label">torque x</span><div class="barwrap"><div class="bar" style="width:36.7%;background:#888;"></div></div><span class="val">0.37</span></div><div class="row"><span class="label">force x</span><div class="barwrap"><div class="bar" style="width:24.4%;background:#888;"></div></div><span class="val">0.24</span></div><div class="row"><span class="label">torque z</span><div class="barwrap"><div class="bar" style="width:23.3%;background:#888;"></div></div><span class="val">0.23</span></div><div class="row"><span class="label">force y</span><div class="barwrap"><div class="bar" style="width:22.4%;background:#888;"></div></div><span class="val">0.22</span></div><div class="row"><span class="label">base mass</span><div class="barwrap"><div class="bar" style="width:14.5%;background:#888;"></div></div><span class="val">0.15</span></div><div class="row"><span class="label">friction</span><div class="barwrap"><div class="bar" style="width:6.9%;background:#888;"></div></div><span class="val">0.07</span></div><div class="row"><span class="label">force z</span><div class="barwrap"><div class="bar" style="width:5.8%;background:#888;"></div></div><span class="val">0.06</span></div><div class="row"><span class="label">torque y</span><div class="barwrap"><div class="bar" style="width:2.4%;background:#888;"></div></div><span class="val">0.02</span></div></div>
+  <div class="panel"><h2>Comparison vs V16 baseline</h2>
+  <div class="subdesc">Earlier diagnostic memory noted: "z_priv blind to COM &amp; σ_actuation (R²&lt;0.05)". V8 numbers:</div>
+  <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:6px;">
+    <thead><tr style="background:#f5f5f5;"><th style="padding:5px;text-align:left">Feature</th><th style="padding:5px;text-align:right">V16-era</th><th style="padding:5px;text-align:right">V8</th><th style="padding:5px;text-align:left">Status</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:5px">actuation_noise_σ</td><td style="padding:5px;text-align:right;color:#888">&lt;0.05</td><td style="padding:5px;text-align:right;font-weight:bold">0.58</td><td style="padding:5px;color:#2ca02c">DECODED</td></tr>
+      <tr><td style="padding:5px">com_x</td><td style="padding:5px;text-align:right;color:#888">&lt;0.05</td><td style="padding:5px;text-align:right;font-weight:bold">0.55</td><td style="padding:5px;color:#2ca02c">DECODED</td></tr>
+      <tr><td style="padding:5px">com_y</td><td style="padding:5px;text-align:right;color:#888">&lt;0.05</td><td style="padding:5px;text-align:right;font-weight:bold">0.52</td><td style="padding:5px;color:#2ca02c">DECODED</td></tr>
+      <tr><td style="padding:5px">com_z</td><td style="padding:5px;text-align:right;color:#888">&lt;0.05</td><td style="padding:5px;text-align:right;font-weight:bold">0.52</td><td style="padding:5px;color:#2ca02c">DECODED</td></tr>
+      <tr><td style="padding:5px">base_height</td><td style="padding:5px;text-align:right">&mdash;</td><td style="padding:5px;text-align:right;font-weight:bold">0.85</td><td style="padding:5px;color:#1f77b4">strong</td></tr>
+      <tr><td style="padding:5px">friction</td><td style="padding:5px;text-align:right">&mdash;</td><td style="padding:5px;text-align:right;font-weight:bold">0.07</td><td style="padding:5px;color:#a02020">still weak</td></tr>
+    </tbody></table>
+  <p style="font-size:12px; margin-top:10px; color:#444;">The COM + σ_act unlocking lines up with V5→V8 changes
+  (c-comp + within-episode σ_act + lock removal). Friction remains weak — z reads friction through gait-effect proxies, not directly.</p>
+  </div>
+</div>
+
+<h2 class="section" id="lock"><span class="num">7.</span>Lock removal effect (V5 → V8)</h2>
+<p>The φ output lock held φ constant for 250-step (5s) windows during training, on the
+hypothesis that per-step φ would be too noisy for credit assignment. Test 1 (eval-only
+lock removal on the V5 checkpoint) suggested the lock was hurting deploy. V8 trains
+without the lock from scratch.</p>
+<div class="grid">
+  <div class="panel"><h2>Lock removal effect (V5 → V8)</h2><div class="pair-row"><div class="pair-label">φ within-env std</div><div class="pair-desc">Per-episode std of φ — how much φ moves through a single rollout. V5's lock pinned this near zero; V8 lets it vary freely.</div><div class="bars"><span class="pair-name">V5</span><div class="pair-barwrap"><div class="pair-bar v5" style="width:16.7%"></div></div><span class="pair-val">0.25</span></div><div class="bars"><span class="pair-name">V8</span><div class="pair-barwrap"><div class="pair-bar v8" style="width:76.7%"></div></div><span class="pair-val">1.15</span></div></div><div class="pair-row"><div class="pair-label">φ population mean</div><div class="pair-desc">Average φ across all envs. Lower in V8 because SHIELD c-comp at −0.10 (vs −0.05 in V5) cancels the synthetic-LiDAR inflation, so the policy doesn't over-hedge.</div><div class="bars"><span class="pair-name">V5</span><div class="pair-barwrap"><div class="pair-bar v5" style="width:79.7%"></div></div><span class="pair-val">2.39</span></div><div class="bars"><span class="pair-name">V8</span><div class="pair-barwrap"><div class="pair-bar v8" style="width:59.7%"></div></div><span class="pair-val">1.79</span></div></div><div class="pair-row"><div class="pair-label">|Pearson(φ, σ_act)| between-env</div><div class="pair-desc">Does the policy raise φ when actuation noise is higher? V5 said no (lock masked it). V8 says yes (mild).</div><div class="bars"><span class="pair-name">V5</span><div class="pair-barwrap"><div class="pair-bar v5" style="width:0.0%"></div></div><span class="pair-val">0.00</span></div><div class="bars"><span class="pair-name">V8</span><div class="pair-barwrap"><div class="pair-bar v8" style="width:40.0%"></div></div><span class="pair-val">0.20</span></div></div><div class="pair-row"><div class="pair-label">BR safety_score on trainmatch</div><div class="pair-desc">Collapsed scalar shown only for V5/V8 comparison. Real comparison is multi-axis above.</div><div class="bars"><span class="pair-name">V5</span><div class="pair-barwrap"><div class="pair-bar v5" style="width:69.1%"></div></div><span class="pair-val">0.69</span></div><div class="bars"><span class="pair-name">V8</span><div class="pair-barwrap"><div class="pair-bar v8" style="width:76.8%"></div></div><span class="pair-val">0.77</span></div></div><div class="legend"><span class="swatch" style="background:#888;"></span>V5 (windowed lock @ 5s)<span class="swatch" style="background:#d62728;"></span>V8 (no lock, per-step φ)</div></div>
+  <div class="panel"><h2>Test 1 recap (eval-only lock removal on V5 ckpt)</h2>
+  <div class="subdesc">Before training V8 from scratch, we ran the same V5 ckpt through two eval pipelines:
+  one with windowed lock (training-matched), one with per-step φ.</div>
+  <table style="width:100%; border-collapse:collapse; font-size:12px;">
+    <thead><tr style="background:#f5f5f5;"><th style="padding:5px;text-align:left">Metric</th><th style="padding:5px;text-align:right">V5 ckpt + lock eval</th><th style="padding:5px;text-align:right">V5 ckpt + no-lock eval</th><th style="padding:5px;text-align:right">V8 ckpt + no-lock eval</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:5px">BR goal_reach</td><td style="padding:5px;text-align:right">0.923</td><td style="padding:5px;text-align:right">0.985</td><td style="padding:5px;text-align:right;font-weight:bold">1.000</td></tr>
+      <tr><td style="padding:5px">BR φ_mean</td><td style="padding:5px;text-align:right">3.16</td><td style="padding:5px;text-align:right">1.71</td><td style="padding:5px;text-align:right;font-weight:bold">2.43</td></tr>
+      <tr><td style="padding:5px">BR safety_score</td><td style="padding:5px;text-align:right">~0.69</td><td style="padding:5px;text-align:right">~0.69</td><td style="padding:5px;text-align:right;font-weight:bold">0.77</td></tr>
+    </tbody></table>
+  <p style="font-size:12px; margin-top:10px; color:#444;">Reading: lock removal alone at eval recovered most of the gap (Test 1).
+  V8 training-without-lock pushes past that, by giving the policy gradient signal it couldn't see when φ was held constant.</p>
+  </div>
+</div>
+
+<h2 class="section" id="shared"><span class="num">8.</span>Shared-signal analysis (partial regression)</h2>
+<p>Caveat #4 from the earlier writeup asked: are α and φ heads really specialized,
+or are they both reading the same "tracking_err is high" lump-sum symptom?
+Method: multivariate regression of each head on standardized priv features.
+Standardized β with |t| &gt; 2 = independent effect after controlling for everything else.</p>
+
+<div class="grid">
+  <div class="panel"><h2>α head — partial β (after controlling for other priv features)</h2>
+    <div class="subdesc">Marginal Pearson masks confounding; partial β is the head's
+    independent sensitivity to each feature.</div>
+    <div class="row"><span class="label">base_height</span><div class="barwrap"><div class="bar" style="width:43%;background:#1f77b4;"></div></div><span class="val">+0.427 ★</span></div>
+    <div class="row"><span class="label">tracking_err</span><div class="barwrap"><div class="bar" style="width:27%;background:#1f77b4;"></div></div><span class="val">+0.271 ★</span></div>
+    <div class="row"><span class="label">base_ang_vel</span><div class="barwrap"><div class="bar" style="width:13.7%;background:#ff7f0e;"></div></div><span class="val">−0.137</span></div>
+    <div class="row"><span class="label">σ_act</span><div class="barwrap"><div class="bar" style="width:9.5%;background:#ff7f0e;"></div></div><span class="val">−0.095</span></div>
+    <div class="row"><span class="label">com_norm</span><div class="barwrap"><div class="bar" style="width:5.2%;background:#888;"></div></div><span class="val">−0.052</span></div>
+    <div class="row"><span class="label">base_mass</span><div class="barwrap"><div class="bar" style="width:5.1%;background:#888;"></div></div><span class="val">+0.051</span></div>
+    <div class="row"><span class="label">friction</span><div class="barwrap"><div class="bar" style="width:4.4%;background:#888;"></div></div><span class="val">−0.044</span></div>
+    <div class="note">★ = independent effect (|t| &gt; 2). α reads base_height and
+    tracking_err as primary signals. σ_act, friction, mass, COM all ignored.</div>
+  </div>
+
+  <div class="panel"><h2>φ head — partial β (after controlling for other priv features)</h2>
+    <div class="subdesc">Same regression, φ as target. Compare to α: shared base_height
+    and tracking_err loadings, but φ has its own σ_act sensitivity.</div>
+    <div class="row"><span class="label">base_height</span><div class="barwrap"><div class="bar" style="width:31.4%;background:#d62728;"></div></div><span class="val">+0.314 ★</span></div>
+    <div class="row"><span class="label">tracking_err</span><div class="barwrap"><div class="bar" style="width:28.2%;background:#d62728;"></div></div><span class="val">+0.282 ★</span></div>
+    <div class="row"><span class="label">σ_act</span><div class="barwrap"><div class="bar" style="width:16.7%;background:#ff7f0e;"></div></div><span class="val">−0.167 ★</span></div>
+    <div class="row"><span class="label">base_ang_vel</span><div class="barwrap"><div class="bar" style="width:11.9%;background:#ff7f0e;"></div></div><span class="val">−0.119</span></div>
+    <div class="row"><span class="label">friction</span><div class="barwrap"><div class="bar" style="width:7.1%;background:#888;"></div></div><span class="val">−0.071</span></div>
+    <div class="row"><span class="label">base_mass</span><div class="barwrap"><div class="bar" style="width:6.4%;background:#888;"></div></div><span class="val">+0.064</span></div>
+    <div class="row"><span class="label">com_norm</span><div class="barwrap"><div class="bar" style="width:0.5%;background:#888;"></div></div><span class="val">+0.005</span></div>
+    <div class="note">★ = independent effect (|t| &gt; 2). φ has independent σ_act
+    loading (β=−0.17, t=−3.0). <b>Theory-correct direction (Kolathaya ISSf).</b>
+    Small but real.</div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:14px;">
+  <h2>Head specialization: where α and φ differ</h2>
+  <table style="width:100%; border-collapse:collapse; font-size:12px;">
+    <thead><tr style="background:#f5f5f5;">
+      <th style="padding:5px;text-align:left">Feature</th>
+      <th style="padding:5px;text-align:right">α partial β</th>
+      <th style="padding:5px;text-align:right">φ partial β</th>
+      <th style="padding:5px;text-align:left">Read</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:5px">tracking_err_norm</td><td style="padding:5px;text-align:right">+0.27</td><td style="padding:5px;text-align:right">+0.28</td><td style="padding:5px;color:#a02020">COUPLED (~identical)</td></tr>
+      <tr><td style="padding:5px">base_height</td><td style="padding:5px;text-align:right">+0.43</td><td style="padding:5px;text-align:right">+0.31</td><td style="padding:5px;color:#a02020">shared, α uses more</td></tr>
+      <tr><td style="padding:5px">σ_act</td><td style="padding:5px;text-align:right">−0.10</td><td style="padding:5px;text-align:right;font-weight:bold">−0.17 ★</td><td style="padding:5px;color:#1f77b4">φ-specific (TISSf-aligned)</td></tr>
+      <tr><td style="padding:5px">base_ang_vel</td><td style="padding:5px;text-align:right">−0.14</td><td style="padding:5px;text-align:right">−0.12</td><td style="padding:5px;color:#888">shared, both small</td></tr>
+      <tr><td style="padding:5px">friction</td><td style="padding:5px;text-align:right">−0.04</td><td style="padding:5px;text-align:right">−0.07</td><td style="padding:5px;color:#888">neither uses</td></tr>
+      <tr><td style="padding:5px">base_mass</td><td style="padding:5px;text-align:right">+0.05</td><td style="padding:5px;text-align:right">+0.06</td><td style="padding:5px;color:#888">neither uses</td></tr>
+      <tr><td style="padding:5px">com_norm</td><td style="padding:5px;text-align:right">−0.05</td><td style="padding:5px;text-align:right">+0.005</td><td style="padding:5px;color:#888">neither uses</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px; margin-top:8px; color:#444;">
+    <b>Within-episode partial β</b> (regress head_t on [tracking_err_t, h_t] within
+    each env, mean across envs):<br>
+    α: tracking_err_t = +0.13, h_t = +0.29 — <i>α reads BOTH</i><br>
+    φ: tracking_err_t = +0.03, h_t = +0.19 — <i>φ reads h only</i><br>
+    Heads ARE differentiated step-to-step, even though they share signals between envs.
+  </p>
+  <p style="font-size:12px; margin-top:8px; color:#444;">
+    <b>Feature ↔ feature correlations between envs are all |r| &lt; 0.18.</b>
+    tracking_err is NOT acting as a lump-sum proxy for σ_act / friction / mass / COM
+    in this rollout. The +0.27/+0.28 marginal Pearson is a genuine direct signal.
+  </p>
+</div>
+
+<h2 class="section" id="caveats"><span class="num">9.</span>Open caveats</h2>
+<div class="caveat">
+  <b>1. The adaptive teacher does NOT yet generalize across deploy distributions.</b>
+  BR matches oracle best fixed only on trainmatch. On both in-dist and OOD, fixed-α
+  B0 baselines beat BR by ~10pp safety_score. Same pattern as V16-era results.
+</div>
+<div class="caveat">
+  <b>2. Heads partially coupled at env level, differentiated within-episode.</b>
+  Both heads gate strongly off tracking_err (β≈+0.28) and base_height (α: +0.43, φ: +0.31).
+  Only φ has independent σ_act sensitivity (β=−0.17, t=−3.0). Within-episode, α reads
+  tracking_err AND h_t; φ reads h_t only. So the heads ARE specialized at the temporal
+  level but share strong env-class signals.
+</div>
+<div class="caveat">
+  <b>3. friction, base_mass, COM all have β ≈ 0 for both heads</b> — despite z_priv
+  encoding COM at R² ≈ 0.52. The bottleneck is at the HEAD, not the encoder. The
+  policy could read COM/friction/mass from z, but doesn't. Why: the reward landscape
+  doesn't reward differentiating these axes (within current DR/eval setup).
+</div>
+<div class="caveat">
+  <b>4. φ goes anti-TISSf within episode.</b> Within-ep Pearson(φ_t, h_t) = +0.16
+  (theory says negative). φ raises when h is high, opposite of textbook TISSf shape.
+  But within-ep partial β of φ_t on h_t is +0.19 (positive but small). Mechanism is
+  context-aware margin, not TISSf-shape regression.
+</div>
+<div class="caveat">
+  <b>5. Friction stays opaque to z_priv (R² 0.07).</b> Friction is observable only through
+  gait-effect proxies; encoder doesn't extract it cleanly. Doesn't matter for current
+  V8 since neither head reads friction anyway, but limits the ceiling of any
+  friction-curriculum experiment.
+</div>
+
+<h2 class="section" id="verdict"><span class="num">10.</span>Verdict and next steps</h2>
+<p><b>V8 is a partial win, not the new baseline.</b> The framework fixes (SHIELD c-comp,
+lock removal, encoder unblocking) are real and should stay. But the OOD reversal
+shows the adaptive teacher hasn't yet learned a deploy-generalizing strategy. The
+trainmatch win is what you'd expect from a policy tuned to one specific eval
+distribution.</p>
+
+<p><b>The specific failure mode:</b> both heads gate primarily off tracking_err and
+base_height. tracking_err is partially observable (cmd − measured_base_vel); base_height
+is partially observable (IMU + height sensor). Neither is "privileged" in the RMA sense.
+On OOD, these signals are present but generated by different causes, so the heads fire
+their trained mappings on out-of-domain inputs.</p>
+
+<p><b>V9 hypothesis:</b> strip tracking_err AND base_height from the priv obs. Force
+the heads to read σ_act, friction, mass, COM (true privileged info) via z_priv. The
+φ head already shows independent σ_act loading — V9 would test if α can develop
+analogous specialization on a different priv axis, and whether either head can
+generalize across deploy distributions when forced to depend on truly privileged
+signals.</p>
+
+<p><b>Next steps:</b></p>
+<ul>
+  <li>V9: priv obs = [friction, base_mass, σ_act, COM]. Drop tracking_err, base_height,
+  base_ang_vel, applied_force/torque from priv layer. Retrain V8 setup with this priv.</li>
+  <li>Update professor with V8 + OOD result + shared-signal analysis. Honest framing.</li>
+  <li>Backlog: friction-curriculum experiment, c/a/b head adaptation. Lower priority now
+  given V9 is the natural next step.</li>
+  <li>Hold off on hardware deploy until V9 settles whether priv design matters.</li>
+</ul>
+
+<div style="margin-top:24px; color:var(--muted); font-size:11px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; border-top:1px solid var(--border); padding-top:8px;">
+  Generated by scripts/render_v8_html.py · Data: ~/Desktop/safety-go2/data_from_lab/wk3tight8/<br>
+  Population statistics — φ: mean=1.79, pop std=0.48, within-env std=1.15;
+  α: mean=1.60, pop std=0.32, within-env std=0.60
+</div>
+
+</body></html>

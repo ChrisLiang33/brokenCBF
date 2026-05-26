@@ -1,0 +1,66 @@
+@article{ames2019control,
+  title   = {Control Barrier Functions: Theory and Applications},
+  author  = {Ames, Aaron D. and Coogan, Samuel and Egerstedt, Magnus and Notomista, Gennaro and Sreenath, Koushil and Tabuada, Paulo},
+  journal = {Proceedings of the European Control Conference (ECC)},
+  pages   = {3420--3431},
+  year    = {2019}
+}
+
+@inproceedings{kolathaya2018input,
+  title     = {Input-to-State Safety with Control Barrier Functions},
+  author    = {Kolathaya, Shishir and Ames, Aaron D.},
+  booktitle = {IEEE Control Systems Letters},
+  volume    = {3},
+  number    = {1},
+  pages     = {108--113},
+  year      = {2018}
+}
+
+@inproceedings{cosner2022safety,
+  title     = {Safety-Aware Preference-Based Learning for Safety-Critical Control},
+  author    = {Cosner, Ryan K. and Tucker, Maegan and Taylor, Andrew J. and Li, Kejun and Molnar, Tamas G. and Ubelacker, Wyatt and Alan, Anil and Orosz, G{\'a}bor and Yue, Yisong and Ames, Aaron D.},
+  booktitle = {Learning for Dynamics and Control Conference (L4DC)},
+  pages     = {1020--1033},
+  year      = {2022}
+}
+
+@inproceedings{kumar2021rma,
+  title     = {RMA: Rapid Motor Adaptation for Legged Robots},
+  author    = {Kumar, Ashish and Fu, Zipeng and Pathak, Deepak and Malik, Jitendra},
+  booktitle = {Robotics: Science and Systems (RSS)},
+  year      = {2021}
+}
+
+@article{schulman2017proximal,
+  title   = {Proximal Policy Optimization Algorithms},
+  author  = {Schulman, John and Wolski, Filip and Dhariwal, Prafulla and Radford, Alec and Klimov, Oleg},
+  journal = {arXiv preprint arXiv:1707.06347},
+  year    = {2017}
+}
+
+@inproceedings{dean2019robust,
+  title     = {Robust Guarantees for Perception-Based Control},
+  author    = {Dean, Sarah and Taylor, Andrew J. and Cosner, Ryan K. and Recht, Benjamin and Ames, Aaron D.},
+  booktitle = {Learning for Dynamics and Control Conference (L4DC)},
+  pages     = {350--360},
+  year      = {2020}
+}
+
+@inproceedings{molnar2021model,
+  title     = {Model-Free Safety-Critical Control for Robotic Systems},
+  author    = {Molnar, Tamas G. and Cosner, Ryan K. and Singletary, Andrew W. and Ubellacker, Wyatt and Ames, Aaron D.},
+  booktitle = {IEEE Robotics and Automation Letters},
+  volume    = {7},
+  number    = {2},
+  pages     = {944--951},
+  year      = {2022}
+}
+
+@article{yang2025shield,
+  title   = {SHIELD: Safety on Humanoids via CBFs In Expectation on Learned Dynamics},
+  author  = {Yang, Lizhi and Werner, Blake and Cosner, Ryan K. and Fridovich-Keil, David and Culbertson, Preston and Ames, Aaron D.},
+  journal = {arXiv preprint arXiv:2505.11494},
+  year    = {2025},
+  note    = {Closest published related work: humanoid CBF safety filter with onboard LiDAR. Verified 2026-05-08 against arXiv:2505.11494 Section V: Livox Mid-360 LiDAR -> Euclidean clustering of pointcloud -> each cluster modeled as a cylinder with FIXED radius R=0.3m (NOT per-cluster radius fitting) -> analytical min-SDF (Eq. 19) with exp smoothing. Same exp-smoothed form as ours. Differentiation: (1) their alpha is per-episode risk-calibrated via Freedman / Brent's method, ours is per-step RL-learned with multi-param robust QP; (2) their cylinder radius is fixed across all clusters, ours varies per obstacle in DR (0.10-0.50m); (3) we add 4 robust slacks (alpha/phi/a/c) tied to literature uncertainty classes, they use alpha + lambda + gamma as fixed hyperparams.}
+}
+

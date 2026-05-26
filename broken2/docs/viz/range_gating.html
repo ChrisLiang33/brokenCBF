@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Range gating on priv obs</title>
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 20px; background: #f5f5f5; }
+  h1 { font-size: 18px; margin: 0 0 8px 0; }
+  .desc { font-size: 13px; color: #555; margin: 0 0 16px 0; max-width: 800px; line-height: 1.5; }
+  .row { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  .panel { background: white; padding: 14px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  canvas { display: block; border: 1px solid #ddd; background: #fafafa; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  .controls { width: 320px; }
+  .control { margin-bottom: 12px; }
+  .control label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  .control input[type=range] { width: 100%; }
+  .val { font-family: monospace; color: #006699; font-size: 12px; }
+
+  .obs-slot { font-family: monospace; font-size: 12px; padding: 10px; border-radius: 6px;
+              background: #f0f0f0; line-height: 1.7; }
+  .obs-slot .label { color: #666; }
+  .obs-slot .num { color: #003388; font-weight: bold; }
+  .obs-slot.zero .num { color: #999; }
+  .obs-slot .row { display: flex; justify-content: space-between; }
+
+  .status { padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 13px;
+            text-align: center; margin-bottom: 10px; }
+  .status.in-range { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+  .status.out-range { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+  .legend { font-size: 12px; line-height: 1.7; margin-top: 12px; color: #555; }
+  .legend .swatch { display: inline-block; width: 12px; height: 12px; vertical-align: middle;
+                    margin-right: 6px; border-radius: 2px; border: 1px solid #999; }
+  .note { font-size: 12px; color: #666; margin-top: 12px; padding: 8px;
+          background: #fff8dc; border-left: 3px solid #d4a017; }
+</style>
+</head>
+<body>
+<h1>Range gating on priv obs</h1>
+<p class="desc">
+  Drag the obstacle. The dashed circle around the robot is the
+  <strong>max_range</strong> boundary (5m default). When the obstacle is
+  inside, the teacher sees its 5 priv-obs floats. When outside, all 5
+  zero out — same as if no obstacle existed. Mirrors the LiDAR FOV
+  cutoff the eventual student will face.
+</p>
+
+<div class="row">
+  <div class="panel">
+    <canvas id="cv" width="600" height="600"></canvas>
+  </div>
+
+  <div class="panel controls">
+    <div id="status" class="status in-range">obstacle IN RANGE</div>
+
+    <div class="control">
+      <label>max_range: <span class="val" id="rangeVal">5.0</span> m</label>
+      <input type="range" id="range" min="1.0" max="8.0" step="0.25" value="5.0">
+    </div>
+
+    <div class="control">
+      <label>Cutoff style</label>
+      <select id="cutoff" style="width:100%; padding: 4px;">
+        <option value="hard">Hard binary (current code)</option>
+        <option value="soft">Soft sigmoid (alternative)</option>
+      </select>
+    </div>
+
+    <div class="control">
+      <label>Obstacle radius: <span class="val" id="obsRVal">0.35</span> m</label>
+      <input type="range" id="obsR" min="0.1" max="0.8" step="0.05" value="0.35">
+    </div>
+
+    <div style="font-size: 12px; font-weight: 600; margin: 14px 0 6px 0;">
+      Priv obs (5 floats teacher sees):
+    </div>
+    <div id="obsSlot" class="obs-slot">
+      <div class="row"><span class="label">rel_pos_x_b</span><span class="num" id="px">0.00</span></div>
+      <div class="row"><span class="label">rel_pos_y_b</span><span class="num" id="py">0.00</span></div>
+      <div class="row"><span class="label">rel_vel_x_b</span><span class="num" id="vx">0.00</span></div>
+      <div class="row"><span class="label">rel_vel_y_b</span><span class="num" id="vy">0.00</span></div>
+      <div class="row"><span class="label">radius</span><span class="num" id="rd">0.00</span></div>
+    </div>
+
+    <div style="font-size: 12px; font-weight: 600; margin: 14px 0 6px 0;">
+      State readout:
+    </div>
+    <div class="obs-slot">
+      <div class="row"><span class="label">distance</span><span class="num" id="dist">0.00 m</span></div>
+      <div class="row"><span class="label">gate weight</span><span class="num" id="gate">1.00</span></div>
+      <div class="row"><span class="label">CBF h(x)</span><span class="num" id="hVal">0.00</span></div>
+    </div>
+
+    <div class="legend">
+      <div><span class="swatch" style="background:#3366cc"></span> robot</div>
+      <div><span class="swatch" style="background:#cc2222"></span> obstacle (in range)</div>
+      <div><span class="swatch" style="background:#bbb"></span> obstacle (out of range, zeroed)</div>
+      <div><span class="swatch" style="background:transparent;border:1px dashed #999"></span> max_range boundary</div>
+    </div>
+
+    <div class="note" id="note"></div>
+  </div>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const SCALE = 50; // 1m = 50px (so 8m fits in 400px radius)
+const ORIGIN = { x: W/2, y: H/2 };
+
+const state = {
+  obsPos: { x: 3.0, y: 0.0 },
+  maxRange: 5.0,
+  cutoffStyle: 'hard',
+  obsR: 0.35,
+};
+
+function w2c(p) { return { x: ORIGIN.x + p.x * SCALE, y: ORIGIN.y - p.y * SCALE }; }
+function c2w(p) { return { x: (p.x - ORIGIN.x) / SCALE, y: -(p.y - ORIGIN.y) / SCALE }; }
+
+function gateWeight(dist) {
+  if (state.cutoffStyle === 'hard') {
+    return dist < state.maxRange ? 1.0 : 0.0;
+  } else {
+    // sigmoid centered at maxRange, smoothness ~0.3m
+    const k = 8.0; // steepness
+    return 1.0 / (1.0 + Math.exp(k * (dist - state.maxRange) / state.maxRange));
+  }
+}
+
+function compute() {
+  // robot at origin, obstacle in world frame
+  // body frame here is the same as world frame (robot facing +x, no rotation)
+  const dx = state.obsPos.x;
+  const dy = state.obsPos.y;
+  const dist = Math.hypot(dx, dy);
+  const gate = gateWeight(dist);
+
+  // priv obs (gated)
+  const rel_pos_x = dx * gate;
+  const rel_pos_y = dy * gate;
+  const rel_vel_x = 0.0 * gate; // assume static obstacle
+  const rel_vel_y = 0.0 * gate;
+  const radius = state.obsR * gate;
+
+  // h(x) — CBF, ungated (uses true distance)
+  const R_combined = state.obsR + 0.15;
+  const sdf = dist - R_combined;
+  const h = 1.0 * (1 - Math.exp(-0.5 * sdf));
+
+  return { dist, gate, rel_pos_x, rel_pos_y, rel_vel_x, rel_vel_y, radius, h };
+}
+
+function drawGrid() {
+  ctx.strokeStyle = '#e5e5e5';
+  ctx.lineWidth = 1;
+  for (let v = -8; v <= 8; v++) {
+    const xc = ORIGIN.x + v * SCALE;
+    if (xc >= 0 && xc <= W) {
+      ctx.beginPath(); ctx.moveTo(xc, 0); ctx.lineTo(xc, H); ctx.stroke();
+    }
+    const yc = ORIGIN.y - v * SCALE;
+    if (yc >= 0 && yc <= H) {
+      ctx.beginPath(); ctx.moveTo(0, yc); ctx.lineTo(W, yc); ctx.stroke();
+    }
+  }
+  ctx.strokeStyle = '#999';
+  ctx.beginPath(); ctx.moveTo(0, ORIGIN.y); ctx.lineTo(W, ORIGIN.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ORIGIN.x, 0); ctx.lineTo(ORIGIN.x, H); ctx.stroke();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  drawGrid();
+
+  const s = compute();
+  const inRange = s.gate > 0.5;
+
+  // soft gate: shade by gate weight
+  // hard gate: fill ring beyond maxRange faintly
+  ctx.fillStyle = inRange ? 'rgba(40,160,80,0.07)' : 'rgba(180,40,40,0.05)';
+  ctx.beginPath();
+  ctx.arc(ORIGIN.x, ORIGIN.y, state.maxRange * SCALE, 0, 2 * Math.PI);
+  ctx.fill();
+
+  // max_range boundary (dashed)
+  ctx.strokeStyle = '#666';
+  ctx.setLineDash([6, 4]);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(ORIGIN.x, ORIGIN.y, state.maxRange * SCALE, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // label the max_range circle
+  ctx.fillStyle = '#666';
+  ctx.font = '11px sans-serif';
+  ctx.fillText(`max_range = ${state.maxRange.toFixed(1)} m`,
+    ORIGIN.x + state.maxRange * SCALE * 0.7, ORIGIN.y - state.maxRange * SCALE * 0.7 - 6);
+
+  // line + arrow from robot to obstacle (only if in range)
+  if (s.gate > 0.01) {
+    const robotC = w2c({ x: 0, y: 0 });
+    const obsC = w2c(state.obsPos);
+    ctx.strokeStyle = `rgba(40,160,80,${s.gate})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(robotC.x, robotC.y);
+    ctx.lineTo(obsC.x, obsC.y);
+    ctx.stroke();
+
+    // teacher sees this arrow as priv obs
+    ctx.fillStyle = `rgba(40,160,80,${s.gate})`;
+    ctx.font = '11px sans-serif';
+    const midX = (robotC.x + obsC.x) / 2;
+    const midY = (robotC.y + obsC.y) / 2;
+    ctx.fillText(`teacher sees @${(s.gate * 100).toFixed(0)}%`, midX + 10, midY - 6);
+  }
+
+  // robot (blue)
+  const robotC = w2c({ x: 0, y: 0 });
+  ctx.fillStyle = 'rgba(51,102,204,0.7)';
+  ctx.strokeStyle = '#003388';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(robotC.x, robotC.y, 0.15 * SCALE, 0, 2 * Math.PI);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#003388';
+  ctx.font = '11px sans-serif';
+  ctx.fillText('robot', robotC.x + 10, robotC.y - 8);
+
+  // obstacle (red if in range, gray if out)
+  const obsC = w2c(state.obsPos);
+  if (inRange) {
+    ctx.fillStyle = 'rgba(204,34,34,0.7)';
+    ctx.strokeStyle = '#660000';
+  } else {
+    ctx.fillStyle = 'rgba(170,170,170,0.5)';
+    ctx.strokeStyle = '#777';
+  }
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(obsC.x, obsC.y, state.obsR * SCALE, 0, 2 * Math.PI);
+  ctx.fill(); ctx.stroke();
+
+  // status + readout
+  const statusEl = document.getElementById('status');
+  if (state.cutoffStyle === 'hard') {
+    if (inRange) {
+      statusEl.className = 'status in-range';
+      statusEl.textContent = 'obstacle IN RANGE — teacher sees full 5 floats';
+    } else {
+      statusEl.className = 'status out-range';
+      statusEl.textContent = 'obstacle OUT OF RANGE — teacher sees zeros';
+    }
+  } else {
+    statusEl.className = 'status in-range';
+    statusEl.style.background = `rgba(40,160,80,${0.15 + 0.4 * s.gate})`;
+    statusEl.textContent = `gate weight = ${s.gate.toFixed(2)} (smooth sigmoid)`;
+  }
+
+  // priv obs slot values
+  const isZero = s.gate < 0.001;
+  const slotEl = document.getElementById('obsSlot');
+  slotEl.classList.toggle('zero', isZero);
+  document.getElementById('px').textContent = s.rel_pos_x.toFixed(3);
+  document.getElementById('py').textContent = s.rel_pos_y.toFixed(3);
+  document.getElementById('vx').textContent = s.rel_vel_x.toFixed(3);
+  document.getElementById('vy').textContent = s.rel_vel_y.toFixed(3);
+  document.getElementById('rd').textContent = s.radius.toFixed(3);
+
+  document.getElementById('dist').textContent = s.dist.toFixed(3) + ' m';
+  document.getElementById('gate').textContent = s.gate.toFixed(2);
+  document.getElementById('hVal').textContent = s.h.toFixed(3);
+
+  // note
+  let note = '';
+  if (state.cutoffStyle === 'hard' && !inRange) {
+    note = `Obstacle at ${s.dist.toFixed(2)}m (> ${state.maxRange}m). All 5 priv obs slots zero out — teacher sees "no obstacle." But the CBF math (h = ${s.h.toFixed(2)}) still uses the real distance — at this range, L_g h is tiny and the CBF barely intervenes anyway, so behavior is consistent.`;
+  } else if (state.cutoffStyle === 'hard' && inRange) {
+    note = `Obstacle at ${s.dist.toFixed(2)}m (< ${state.maxRange}m). Teacher sees full pose. Drag past the dashed circle to watch all 5 slots snap to zero.`;
+  } else if (state.cutoffStyle === 'soft') {
+    note = `Soft sigmoid: gate weight smoothly decreases from 1 (close) to 0 (far) across the boundary. Avoids the discontinuity of the hard cutoff. Slightly different from current code, would need a code change to use.`;
+  }
+  document.getElementById('note').textContent = note;
+}
+
+// dragging
+let dragging = false;
+cv.addEventListener('mousedown', (e) => {
+  const r = cv.getBoundingClientRect();
+  state.obsPos = c2w({ x: e.clientX - r.left, y: e.clientY - r.top });
+  dragging = true; draw();
+});
+cv.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  const r = cv.getBoundingClientRect();
+  state.obsPos = c2w({ x: e.clientX - r.left, y: e.clientY - r.top });
+  draw();
+});
+window.addEventListener('mouseup', () => { dragging = false; });
+
+// controls
+document.getElementById('range').addEventListener('input', (e) => {
+  state.maxRange = parseFloat(e.target.value);
+  document.getElementById('rangeVal').textContent = state.maxRange.toFixed(1);
+  draw();
+});
+document.getElementById('obsR').addEventListener('input', (e) => {
+  state.obsR = parseFloat(e.target.value);
+  document.getElementById('obsRVal').textContent = state.obsR.toFixed(2);
+  draw();
+});
+document.getElementById('cutoff').addEventListener('change', (e) => {
+  state.cutoffStyle = e.target.value;
+  draw();
+});
+
+draw();
+</script>
+</body>
+</html>

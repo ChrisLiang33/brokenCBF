@@ -1,0 +1,2014 @@
+================================================================
+Multi-seed eval on eval-corridor-strict
+Started: 2026-05-22 13:00:01
+  task    : Isaac-CBF-Go2-Navigation-V15-Strict-v0
+  ckpt-1  : logs/rsl_rl/cbf_go2_teacher_rma/2026-05-20_18-25-01/model_2499.pt  (policy-twostream-base)
+  ckpt-2  : logs/rsl_rl/cbf_go2_teacher_rma/2026-05-21_23-51-34//model_950.pt   (policy-wider-dr)
+================================================================
+
+─── twostream_base seed=42 ─── 13:00:01
+[3gH    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H [INFO] Using python from: /home/chrisliang/miniconda3/envs/isaaclab/bin/python
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/isaaclab.python.headless.kit
+[modes] ['B0', 'B1', 'BR']
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.safety.cbf_go2.cbf_go2_env_cfg:CbfGo2EnvCfg_NAVIGATION_V15_STRICT
+[eval] env_cfg.seed=42 (DR + episode init pinned)
+[eval] forced bimodal_resample=False, resample=(100,100) — deploy-realistic locked
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-05-22_13-00-04.log[0m
+[36m======================================================================================[0m
+
+[33m13:00:04 [stage.py] WARNING: Isaac Sim < 5.0 does not support thread-local stage contexts. Skipping use_stage().[0m
+[33m13:00:04 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 42
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m13:00:05 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+[Warning] [simulation_app.simulation_app] Modules: ['omni.kit_app'] were loaded before SimulationApp was started and might not be loaded correctly.
+[Warning] [simulation_app.simulation_app] Please check to make sure no extra omniverse or pxr modules are imported before the call to SimulationApp(...)
+Loading user config located at: '/home/chrisliang/miniconda3/envs/isaaclab/lib/python3.10/site-packages/omni/data/Kit/Isaac-Sim/4.5/user.config.json'
+[Info] [carb] Logging to file: /home/chrisliang/miniconda3/envs/isaaclab/lib/python3.10/site-packages/omni/logs/Kit/Isaac-Sim/4.5/kit_20260522_130001.log
+2026-05-22 17:00:01 [0ms] [Warning] [omni.kit.app.plugin] No crash reporter present, dumps uploading isn't available.
+2026-05-22 17:00:01 [2ms] [Warning] [omni.ext.plugin] [ext: rendering_modes] Extensions config 'extension.toml' doesn't exist '/home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/rendering_modes' or '/home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/rendering_modes/config'
+2026-05-22 17:00:01 [69ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-05-22 17:00:01 [112ms] [Warning] [omni.platforminfo.plugin] failed to open the default display.  Can't verify X Server version.
+2026-05-22 17:00:01 [246ms] [Warning] [omni.datastore] OmniHub is inaccessible
+2026-05-22 17:00:02 [290ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-05-22 17:00:03 [2,116ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+2026-05-22 17:00:03 [2,116ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 595.58.03     | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 5090          | Yes: 0 |     | 32853   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2b85      | a70cb704.. |
+|     |                                  |        |     |            | 2         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | Intel(R) Graphics (ARL)          |        |     | 47810   MB | 8086      | 0          |
+|     |                                  |        |     |            | 7d67      | 8680677d.. |
+|     |                                  |        |     |            | 0         |            |
+|=============================================================================================|
+| OS: 24.04.4 LTS (Noble Numbat) ubuntu, Version: 24.04.4, Kernel: 6.17.0-1023-oem
+| Processor: Intel(R) Core(TM) Ultra 9 285K
+| Cores: 24 | Logical Cores: 24
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 63747 | Free Memory: 54631
+| Total Page/Swap (MB): 8191 | Free Page/Swap: 8191
+|---------------------------------------------------------------------------------------------|
+2026-05-22 17:00:04 [2,358ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-05-22 17:00:04 [2,358ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 1528.86 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   1.16 
+
+   CPU     0 
+     0   1.55 
+2026-05-22 17:00:05 [3,566ms] [Warning] [omni.u[INFO]: Time taken for scene creation : 0.839895 seconds
+[INFO]: Scene manager:  <class InteractiveScene>
+	Number of environments: 64
+	Environment spacing   : 2.5
+	Source prim name      : /World/envs/env_0
+	Global prim paths     : ['/World/ground']
+	Replicate physics     : True
+[INFO]: Starting the simulation. This may take a few seconds. Please wait...
+[33m13:00:05 [articulation.py] WARNING: Spatial tendons are not supported in Isaac Sim < 5.0: patching spatial-tendon getter and setter to use dummy value[0m
+[INFO]: Time taken for simulation start : 0.482802 seconds
+[INFO] Command Manager:  <CommandManager> contains 1 active terms.
++---------------------------------------------+
+|             Active Command Terms            |
++-------+---------------+---------------------+
+| Index | Name          |         Type        |
++-------+---------------+---------------------+
+|   0   | base_velocity | MultiPlannerCommand |
++-------+---------------+---------------------+
+
+[INFO] Event Manager:  <EventManager> contains 3 active terms.
++--------------------------------------+
+| Active Event Terms in Mode: 'startup' |
++----------+---------------------------+
+|  Index   | Name                      |
++----------+---------------------------+
+|    0     | physics_material          |
+|    1     | add_base_mass             |
+|    2     | randomize_com             |
++----------+---------------------------+
++--------------------------------------+
+| Active Event Terms in Mode: 'reset'  |
++-------+------------------------------+
+| Index | Name                         |
++-------+------------------------------+
+|   0   | base_external_force_torque   |
+|   1   | reset_base                   |
+|   2   | reset_robot_joints           |
+|   3   | randomize_obstacles_position |
++-------+------------------------------+
++----------------------------------------------+
+|    Active Event Terms in Mode: 'interval'    |
++-------+------------+-------------------------+
+| Index | Name       | Interval time range (s) |
++-------+------------+-------------------------+
+|   0   | push_robot |       (5.0, 10.0)       |
++-------+------------+-------------------------+
+
+[INFO] Recorder Manager:  <RecorderManager> contains 0 active terms.
++---------------------+
+| Active Recorder Terms |
++-----------+---------+
+|   Index   | Name    |
++-----------+---------+
++-----------+---------+
+
+[INFO] Action Manager:  <ActionManager> contains 1 active terms.
++-----------------------------------+
+|   Active Action Terms (shape: 5)  |
++--------+-------------+------------+
+| Index  | Name        |  Dimension |
++--------+-------------+------------+
+|   0    | cbf_params  |          5 |
++--------+-------------+------------+
+
+[INFO] Observation Manager: <ObservationManager> contains 1 groups.
++------------------------------------------------------------+
+| Active Observation Terms in Group: 'policy' (shape: (8225,)) |
++----------+-----------------------------------+-------------+
+|  Index   | Name                              |    Shape    |
++----------+-----------------------------------+-------------+
+|    0     | friction                          |     (1,)    |
+|    1     | base_mass                         |     (1,)    |
+|    2     | applied_force                     |     (3,)    |
+|    3     | applied_torque                    |     (3,)    |
+|    4     | com_offset                        |     (3,)    |
+|    5     | actuation_noise_sigma             |     (1,)    |
+|    6     | mean_signed_delta_R               |     (1,)    |
+|    7     | max_abs_delta_R                   |     (1,)    |
+|    8     | base_height                       |     (1,)    |
+|    9     | tracking_err                      |    (15,)    |
+|    10    | base_ang_vel                      |     (3,)    |
+|    11    | obstacles                         |   (8192,)   |
++----------+-----------------------------------+-------------+
+
+[INFO] Termination Manager:  <TerminationManager> contains 4 active terms.
++-------------------------------------+
+|       Active Termination Terms      |
++-------+------------------+----------+
+| Index | Name             | Time Out |
++-------+------------------+----------+
+|   0   | time_out         |   True   |
+|   1   | base_contact     |  False   |
+|   2   | obstacle_contact |  False   |
+|   3   | goal_reached     |  False   |
++-------+------------------+----------+
+
+[INFO] Reward Manager:  <RewardManager> contains 17 active terms.
++---------------------------------------+
+|          Active Reward Terms          |
++-------+----------------------+--------+
+| Index | Name                 | Weight |
++-------+----------------------+--------+
+|   0   | collision            | -100.0 |
+|   1   | u_safe_deviation     |    0.0 |
+|   2   | infeasibility        |  -10.0 |
+|   3   | proximity            |    0.0 |
+|   4   | ttc_penalty          |    0.0 |
+|   5   | action_rate          |  -0.05 |
+|   6   | action_rate_split    |    0.0 |
+|   7   | base_contact_penalty | -500.0 |
+|   8   | stuck                |   -1.0 |
+|   9   | cbf_lhs_margin       |    0.0 |
+|   10  | velocity_along_cmd   |    0.0 |
+|   11  | velocity_tracking    |    1.5 |
+|   12  | tilt_penalty         |   -2.0 |
+|   13  | u_safe_rate          |    0.0 |
+|   14  | cbf_a_l1             |    0.0 |
+|   15  | cbf_phi_above_target |    0.0 |
+|   16  | cbf_deflection_l2    |    0.0 |
++-------+----------------------+--------+
+
+[INFO] Curriculum Manager:  <CurriculumManager> contains 0 active terms.
++----------------------+
+| Active Curriculum Terms |
++-----------+----------+
+|   Index   | Name     |
++-----------+----------+
++-----------+----------+
+
+[INFO]: Completed setting up the environment...
+[env] Isaac-CBF-Go2-Navigation-V15-Strict-v0, num_envs=64, device=cuda:0
+[eval] aligning PARAM_RANGES['c'] (0.0, 1.0) → env._c_param_range (-0.1000, -0.1000)
+[eval] aligning PARAM_RANGES['alpha'] (0.1, 5.0) → env._alpha_param_range (0.5000, 3.0000)
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.safety.cbf_go2.agents.rsl_rl_ppo_rma_cfg:CbfGo2RMAPPORunnerCfg
+[33m13:00:06 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+--------------------------------------------------------------------------------
+Resolved observation sets: 
+	 actor :  ['policy']
+	 critic :  ['policy']
+--------------------------------------------------------------------------------
+Actor Model: CbfTeacherRMAModel(
+  (obs_normalizer): Identity()
+  (distribution): GaussianDistribution()
+  (mlp): _SplitRMAMLP(
+    (0): _PrivEncoder(
+      (normalizer): _PrivRunningMeanStd()
+      (net): Sequential(
+        (0): Linear(in_features=14, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+        (2): Linear(in_features=64, out_features=64, bias=True)
+        (3): ELU(alpha=1.0)
+        (4): Linear(in_features=64, out_features=16, bias=True)
+        (5): ELU(alpha=1.0)
+      )
+    )
+    (1): _GridEncoder(
+      (conv): Sequential(
+        (0): Conv2d(2, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (1): ELU(alpha=1.0)
+        (2): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (3): ELU(alpha=1.0)
+      )
+      (proj): Sequential(
+        (0): Linear(in_features=8192, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+      )
+    )
+    (2): MLP(
+      (0): Linear(in_features=99, out_features=128, bias=True)
+      (1): ELU(alpha=1.0)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): ELU(alpha=1.0)
+      (4): Linear(in_features=128, out_features=5, bias=True)
+    )
+    (proprio_normalizer): _PrivRunningMeanStd()
+  )
+)
+Critic Model: CbfCriticRMAModel(
+  (obs_normalizer): Identity()
+  (mlp): _SplitRMAMLP(
+    (0): _PrivEncoder(
+      (normalizer): _PrivRunningMeanStd()
+      (net): Sequential(
+        (0): Linear(in_features=14, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+        (2): Linear(in_features=64, out_features=64, bias=True)
+        (3): ELU(alpha=1.0)
+        (4): Linear(in_features=64, out_features=16, bias=True)
+        (5): ELU(alpha=1.0)
+      )
+    )
+    (1): _GridEncoder(
+      (conv): Sequential(
+        (0): Conv2d(2, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (1): ELU(alpha=1.0)
+        (2): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (3): ELU(alpha=1.0)
+      )
+      (proj): Sequential(
+        (0): Linear(in_features=8192, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+      )
+    )
+    (2): MLP(
+      (0): Linear(in_features=99, out_features=128, bias=True)
+      (1): ELU(alpha=1.0)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): ELU(alpha=1.0)
+      (4): Linear(in_features=128, out_features=1, bias=True)
+    )
+    (proprio_normalizer): _PrivRunningMeanStd()
+  )
+)
+[sweep] 10 configs × 1000 steps each
+[33m13:00:12 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:00:17 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:00:23 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:00:28 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 1/10] B0_α=0.50                         eps=102  coll=0.980  fall=0.020  stuck=0.000  v̄_xy=0.539  min_h̄=-0.071  close%=0.549  goal%=0.922
+[33m13:00:35 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:00:40 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:00:45 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:00:50 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 2/10] B0_α=2.00                         eps=107  coll=0.991  fall=0.000  stuck=0.000  v̄_xy=0.576  min_h̄=-0.085  close%=0.700  goal%=0.963
+[33m13:00:58 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:01:03 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:01:08 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:01:13 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 3/10] B0_α=3.00                         eps=109  coll=0.963  fall=0.018  stuck=0.009  v̄_xy=0.586  min_h̄=-0.078  close%=0.692  goal%=0.954
+[33m13:01:20 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:01:25 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:01:31 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:01:36 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 4/10] B1_α=0.50_φ=0.50                  eps= 97  coll=0.948  fall=0.041  stuck=0.000  v̄_xy=0.484  min_h̄=-0.046  close%=0.499  goal%=0.804
+[33m13:01:41 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:01:47 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:01:52 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:01:58 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 5/10] B1_α=0.50_φ=2.00                  eps= 81  coll=0.802  fall=0.037  stuck=0.000  v̄_xy=0.493  min_h̄=-0.024  close%=0.268  goal%=0.815
+[33m13:02:04 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:02:09 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:02:14 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:02:19 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 6/10] B1_α=2.00_φ=0.50                  eps=101  coll=0.970  fall=0.000  stuck=0.000  v̄_xy=0.539  min_h̄=-0.064  close%=0.631  goal%=0.901
+[33m13:02:28 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:02:33 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:02:38 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:02:43 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 7/10] B1_α=2.00_φ=2.00                  eps= 96  coll=0.979  fall=0.021  stuck=0.000  v̄_xy=0.570  min_h̄=-0.043  close%=0.451  goal%=0.927
+[33m13:02:52 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:02:57 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:03:02 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:03:07 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 8/10] B1_α=3.00_φ=0.50                  eps=105  coll=0.971  fall=0.000  stuck=0.010  v̄_xy=0.575  min_h̄=-0.064  close%=0.687  goal%=0.962
+[33m13:03:13 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:03:18 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:03:23 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:03:28 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 9/10] B1_α=3.00_φ=2.00                  eps=107  coll=0.953  fall=0.019  stuck=0.000  v̄_xy=0.585  min_h̄=-0.023  close%=0.464  goal%=0.925
+[33m13:03:35 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:03:40 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:03:45 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:03:50 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+
+─── wider_dr seed=42 ─── 13:03:55
+[3gH    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H [INFO] Using python from: /home/chrisliang/miniconda3/envs/isaaclab/bin/python
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/isaaclab.python.headless.kit
+[modes] ['B0', 'B1', 'BR']
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.safety.cbf_go2.cbf_go2_env_cfg:CbfGo2EnvCfg_NAVIGATION_V15_STRICT
+[eval] env_cfg.seed=42 (DR + episode init pinned)
+[eval] forced bimodal_resample=False, resample=(100,100) — deploy-realistic locked
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-05-22_13-03-58.log[0m
+[36m======================================================================================[0m
+
+[33m13:03:58 [stage.py] WARNING: Isaac Sim < 5.0 does not support thread-local stage contexts. Skipping use_stage().[0m
+[33m13:03:58 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 42
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m13:03:58 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+[Warning] [simulation_app.simulation_app] Modules: ['omni.kit_app'] were loaded before SimulationApp was started and might not be loaded correctly.
+[Warning] [simulation_app.simulation_app] Please check to make sure no extra omniverse or pxr modules are imported before the call to SimulationApp(...)
+Loading user config located at: '/home/chrisliang/miniconda3/envs/isaaclab/lib/python3.10/site-packages/omni/data/Kit/Isaac-Sim/4.5/user.config.json'
+[Info] [carb] Logging to file: /home/chrisliang/miniconda3/envs/isaaclab/lib/python3.10/site-packages/omni/logs/Kit/Isaac-Sim/4.5/kit_20260522_130355.log
+2026-05-22 17:03:55 [0ms] [Warning] [omni.kit.app.plugin] No crash reporter present, dumps uploading isn't available.
+2026-05-22 17:03:55 [2ms] [Warning] [omni.ext.plugin] [ext: rendering_modes] Extensions config 'extension.toml' doesn't exist '/home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/rendering_modes' or '/home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/rendering_modes/config'
+2026-05-22 17:03:55 [73ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-05-22 17:03:55 [114ms] [Warning] [omni.platforminfo.plugin] failed to open the default display.  Can't verify X Server version.
+2026-05-22 17:03:55 [251ms] [Warning] [omni.datastore] OmniHub is inaccessible
+2026-05-22 17:03:55 [296ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-05-22 17:03:57 [2,085ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+2026-05-22 17:03:57 [2,085ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 595.58.03     | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 5090          | Yes: 0 |     | 32853   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2b85      | a70cb704.. |
+|     |                                  |        |     |            | 2         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | Intel(R) Graphics (ARL)          |        |     | 47810   MB | 8086      | 0          |
+|     |                                  |        |     |            | 7d67      | 8680677d.. |
+|     |                                  |        |     |            | 0         |            |
+|=============================================================================================|
+| OS: 24.04.4 LTS (Noble Numbat) ubuntu, Version: 24.04.4, Kernel: 6.17.0-1023-oem
+| Processor: Intel(R) Core(TM) Ultra 9 285K
+| Cores: 24 | Logical Cores: 24
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 63747 | Free Memory: 54632
+| Total Page/Swap (MB): 8191 | Free Page/Swap: 8191
+|---------------------------------------------------------------------------------------------|
+2026-05-22 17:03:57 [2,321ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-05-22 17:03:57 [2,321ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 1534.87 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   1.14 
+
+   CPU     0 
+     0   1.57 
+2026-05-22 17:03:58 [3,425ms] [Warning] [omni.u[INFO]: Time taken for scene creation : 0.714210 seconds
+[INFO]: Scene manager:  <class InteractiveScene>
+	Number of environments: 64
+	Environment spacing   : 2.5
+	Source prim name      : /World/envs/env_0
+	Global prim paths     : ['/World/ground']
+	Replicate physics     : True
+[INFO]: Starting the simulation. This may take a few seconds. Please wait...
+[33m13:03:59 [articulation.py] WARNING: Spatial tendons are not supported in Isaac Sim < 5.0: patching spatial-tendon getter and setter to use dummy value[0m
+[INFO]: Time taken for simulation start : 0.474812 seconds
+[INFO] Command Manager:  <CommandManager> contains 1 active terms.
++---------------------------------------------+
+|             Active Command Terms            |
++-------+---------------+---------------------+
+| Index | Name          |         Type        |
++-------+---------------+---------------------+
+|   0   | base_velocity | MultiPlannerCommand |
++-------+---------------+---------------------+
+
+[INFO] Event Manager:  <EventManager> contains 3 active terms.
++--------------------------------------+
+| Active Event Terms in Mode: 'startup' |
++----------+---------------------------+
+|  Index   | Name                      |
++----------+---------------------------+
+|    0     | physics_material          |
+|    1     | add_base_mass             |
+|    2     | randomize_com             |
++----------+---------------------------+
++--------------------------------------+
+| Active Event Terms in Mode: 'reset'  |
++-------+------------------------------+
+| Index | Name                         |
++-------+------------------------------+
+|   0   | base_external_force_torque   |
+|   1   | reset_base                   |
+|   2   | reset_robot_joints           |
+|   3   | randomize_obstacles_position |
++-------+------------------------------+
++----------------------------------------------+
+|    Active Event Terms in Mode: 'interval'    |
++-------+------------+-------------------------+
+| Index | Name       | Interval time range (s) |
++-------+------------+-------------------------+
+|   0   | push_robot |       (5.0, 10.0)       |
++-------+------------+-------------------------+
+
+[INFO] Recorder Manager:  <RecorderManager> contains 0 active terms.
++---------------------+
+| Active Recorder Terms |
++-----------+---------+
+|   Index   | Name    |
++-----------+---------+
++-----------+---------+
+
+[INFO] Action Manager:  <ActionManager> contains 1 active terms.
++-----------------------------------+
+|   Active Action Terms (shape: 5)  |
++--------+-------------+------------+
+| Index  | Name        |  Dimension |
++--------+-------------+------------+
+|   0    | cbf_params  |          5 |
++--------+-------------+------------+
+
+[INFO] Observation Manager: <ObservationManager> contains 1 groups.
++------------------------------------------------------------+
+| Active Observation Terms in Group: 'policy' (shape: (8225,)) |
++----------+-----------------------------------+-------------+
+|  Index   | Name                              |    Shape    |
++----------+-----------------------------------+-------------+
+|    0     | friction                          |     (1,)    |
+|    1     | base_mass                         |     (1,)    |
+|    2     | applied_force                     |     (3,)    |
+|    3     | applied_torque                    |     (3,)    |
+|    4     | com_offset                        |     (3,)    |
+|    5     | actuation_noise_sigma             |     (1,)    |
+|    6     | mean_signed_delta_R               |     (1,)    |
+|    7     | max_abs_delta_R                   |     (1,)    |
+|    8     | base_height                       |     (1,)    |
+|    9     | tracking_err                      |    (15,)    |
+|    10    | base_ang_vel                      |     (3,)    |
+|    11    | obstacles                         |   (8192,)   |
++----------+-----------------------------------+-------------+
+
+[INFO] Termination Manager:  <TerminationManager> contains 4 active terms.
++-------------------------------------+
+|       Active Termination Terms      |
++-------+------------------+----------+
+| Index | Name             | Time Out |
++-------+------------------+----------+
+|   0   | time_out         |   True   |
+|   1   | base_contact     |  False   |
+|   2   | obstacle_contact |  False   |
+|   3   | goal_reached     |  False   |
++-------+------------------+----------+
+
+[INFO] Reward Manager:  <RewardManager> contains 17 active terms.
++---------------------------------------+
+|          Active Reward Terms          |
++-------+----------------------+--------+
+| Index | Name                 | Weight |
++-------+----------------------+--------+
+|   0   | collision            | -100.0 |
+|   1   | u_safe_deviation     |    0.0 |
+|   2   | infeasibility        |  -10.0 |
+|   3   | proximity            |    0.0 |
+|   4   | ttc_penalty          |    0.0 |
+|   5   | action_rate          |  -0.05 |
+|   6   | action_rate_split    |    0.0 |
+|   7   | base_contact_penalty | -500.0 |
+|   8   | stuck                |   -1.0 |
+|   9   | cbf_lhs_margin       |    0.0 |
+|   10  | velocity_along_cmd   |    0.0 |
+|   11  | velocity_tracking    |    1.5 |
+|   12  | tilt_penalty         |   -2.0 |
+|   13  | u_safe_rate          |    0.0 |
+|   14  | cbf_a_l1             |    0.0 |
+|   15  | cbf_phi_above_target |    0.0 |
+|   16  | cbf_deflection_l2    |    0.0 |
++-------+----------------------+--------+
+
+[INFO] Curriculum Manager:  <CurriculumManager> contains 0 active terms.
++----------------------+
+| Active Curriculum Terms |
++-----------+----------+
+|   Index   | Name     |
++-----------+----------+
++-----------+----------+
+
+[INFO]: Completed setting up the environment...
+[env] Isaac-CBF-Go2-Navigation-V15-Strict-v0, num_envs=64, device=cuda:0
+[eval] aligning PARAM_RANGES['c'] (0.0, 1.0) → env._c_param_range (-0.1000, -0.1000)
+[eval] aligning PARAM_RANGES['alpha'] (0.1, 5.0) → env._alpha_param_range (0.5000, 3.0000)
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.safety.cbf_go2.agents.rsl_rl_ppo_rma_cfg:CbfGo2RMAPPORunnerCfg
+[33m13:03:59 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+--------------------------------------------------------------------------------
+Resolved observation sets: 
+	 actor :  ['policy']
+	 critic :  ['policy']
+--------------------------------------------------------------------------------
+Actor Model: CbfTeacherRMAModel(
+  (obs_normalizer): Identity()
+  (distribution): GaussianDistribution()
+  (mlp): _SplitRMAMLP(
+    (0): _PrivEncoder(
+      (normalizer): _PrivRunningMeanStd()
+      (net): Sequential(
+        (0): Linear(in_features=14, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+        (2): Linear(in_features=64, out_features=64, bias=True)
+        (3): ELU(alpha=1.0)
+        (4): Linear(in_features=64, out_features=16, bias=True)
+        (5): ELU(alpha=1.0)
+      )
+    )
+    (1): _GridEncoder(
+      (conv): Sequential(
+        (0): Conv2d(2, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (1): ELU(alpha=1.0)
+        (2): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (3): ELU(alpha=1.0)
+      )
+      (proj): Sequential(
+        (0): Linear(in_features=8192, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+      )
+    )
+    (2): MLP(
+      (0): Linear(in_features=99, out_features=128, bias=True)
+      (1): ELU(alpha=1.0)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): ELU(alpha=1.0)
+      (4): Linear(in_features=128, out_features=5, bias=True)
+    )
+    (proprio_normalizer): _PrivRunningMeanStd()
+  )
+)
+Critic Model: CbfCriticRMAModel(
+  (obs_normalizer): Identity()
+  (mlp): _SplitRMAMLP(
+    (0): _PrivEncoder(
+      (normalizer): _PrivRunningMeanStd()
+      (net): Sequential(
+        (0): Linear(in_features=14, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+        (2): Linear(in_features=64, out_features=64, bias=True)
+        (3): ELU(alpha=1.0)
+        (4): Linear(in_features=64, out_features=16, bias=True)
+        (5): ELU(alpha=1.0)
+      )
+    )
+    (1): _GridEncoder(
+      (conv): Sequential(
+        (0): Conv2d(2, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (1): ELU(alpha=1.0)
+        (2): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (3): ELU(alpha=1.0)
+      )
+      (proj): Sequential(
+        (0): Linear(in_features=8192, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+      )
+    )
+    (2): MLP(
+      (0): Linear(in_features=99, out_features=128, bias=True)
+      (1): ELU(alpha=1.0)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): ELU(alpha=1.0)
+      (4): Linear(in_features=128, out_features=1, bias=True)
+    )
+    (proprio_normalizer): _PrivRunningMeanStd()
+  )
+)
+[sweep] 10 configs × 1000 steps each
+[33m13:04:06 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:04:11 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:04:16 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:04:21 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 1/10] B0_α=0.50                         eps=102  coll=0.980  fall=0.020  stuck=0.000  v̄_xy=0.539  min_h̄=-0.071  close%=0.549  goal%=0.922
+[33m13:04:27 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:04:33 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:04:38 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:04:43 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 2/10] B0_α=2.00                         eps=107  coll=0.991  fall=0.000  stuck=0.000  v̄_xy=0.576  min_h̄=-0.085  close%=0.700  goal%=0.963
+[33m13:04:50 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:04:55 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:05:00 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:05:05 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 3/10] B0_α=3.00                         eps=109  coll=0.963  fall=0.018  stuck=0.009  v̄_xy=0.586  min_h̄=-0.078  close%=0.692  goal%=0.954
+[33m13:05:11 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:05:16 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:05:21 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:05:26 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:05:31 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 4/10] B1_α=0.50_φ=0.50                  eps= 97  coll=0.948  fall=0.041  stuck=0.000  v̄_xy=0.484  min_h̄=-0.046  close%=0.499  goal%=0.804
+[33m13:05:36 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:05:41 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:05:47 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:05:52 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 5/10] B1_α=0.50_φ=2.00                  eps= 81  coll=0.802  fall=0.037  stuck=0.000  v̄_xy=0.493  min_h̄=-0.024  close%=0.268  goal%=0.815
+[33m13:05:57 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:06:02 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:06:08 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:06:13 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:06:18 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 6/10] B1_α=2.00_φ=0.50                  eps=101  coll=0.970  fall=0.000  stuck=0.000  v̄_xy=0.539  min_h̄=-0.064  close%=0.631  goal%=0.901
+[33m13:06:23 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:06:29 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:06:34 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:06:39 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 7/10] B1_α=2.00_φ=2.00                  eps= 96  coll=0.979  fall=0.021  stuck=0.000  v̄_xy=0.570  min_h̄=-0.043  close%=0.451  goal%=0.927
+[33m13:06:46 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:06:52 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:06:57 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:07:02 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 8/10] B1_α=3.00_φ=0.50                  eps=105  coll=0.971  fall=0.000  stuck=0.010  v̄_xy=0.575  min_h̄=-0.064  close%=0.687  goal%=0.962
+[33m13:07:07 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:07:12 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:07:17 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:07:22 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 9/10] B1_α=3.00_φ=2.00                  eps=107  coll=0.953  fall=0.019  stuck=0.000  v̄_xy=0.585  min_h̄=-0.023  close%=0.464  goal%=0.925
+[33m13:07:28 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:07:33 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:07:38 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:07:43 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:07:48 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+
+─── twostream_base seed=123 ─── 13:07:51
+[3gH    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H [INFO] Using python from: /home/chrisliang/miniconda3/envs/isaaclab/bin/python
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/isaaclab.python.headless.kit
+[modes] ['B0', 'B1', 'BR']
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.safety.cbf_go2.cbf_go2_env_cfg:CbfGo2EnvCfg_NAVIGATION_V15_STRICT
+[eval] env_cfg.seed=123 (DR + episode init pinned)
+[eval] forced bimodal_resample=False, resample=(100,100) — deploy-realistic locked
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-05-22_13-07-54.log[0m
+[36m======================================================================================[0m
+
+[33m13:07:54 [stage.py] WARNING: Isaac Sim < 5.0 does not support thread-local stage contexts. Skipping use_stage().[0m
+[33m13:07:54 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 123
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m13:07:54 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+[Warning] [simulation_app.simulation_app] Modules: ['omni.kit_app'] were loaded before SimulationApp was started and might not be loaded correctly.
+[Warning] [simulation_app.simulation_app] Please check to make sure no extra omniverse or pxr modules are imported before the call to SimulationApp(...)
+Loading user config located at: '/home/chrisliang/miniconda3/envs/isaaclab/lib/python3.10/site-packages/omni/data/Kit/Isaac-Sim/4.5/user.config.json'
+[Info] [carb] Logging to file: /home/chrisliang/miniconda3/envs/isaaclab/lib/python3.10/site-packages/omni/logs/Kit/Isaac-Sim/4.5/kit_20260522_130751.log
+2026-05-22 17:07:51 [0ms] [Warning] [omni.kit.app.plugin] No crash reporter present, dumps uploading isn't available.
+2026-05-22 17:07:51 [2ms] [Warning] [omni.ext.plugin] [ext: rendering_modes] Extensions config 'extension.toml' doesn't exist '/home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/rendering_modes' or '/home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/rendering_modes/config'
+2026-05-22 17:07:51 [71ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-05-22 17:07:51 [114ms] [Warning] [omni.platforminfo.plugin] failed to open the default display.  Can't verify X Server version.
+2026-05-22 17:07:51 [247ms] [Warning] [omni.datastore] OmniHub is inaccessible
+2026-05-22 17:07:51 [293ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-05-22 17:07:53 [2,093ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+2026-05-22 17:07:53 [2,093ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 595.58.03     | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 5090          | Yes: 0 |     | 32853   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2b85      | a70cb704.. |
+|     |                                  |        |     |            | 2         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | Intel(R) Graphics (ARL)          |        |     | 47810   MB | 8086      | 0          |
+|     |                                  |        |     |            | 7d67      | 8680677d.. |
+|     |                                  |        |     |            | 0         |            |
+|=============================================================================================|
+| OS: 24.04.4 LTS (Noble Numbat) ubuntu, Version: 24.04.4, Kernel: 6.17.0-1023-oem
+| Processor: Intel(R) Core(TM) Ultra 9 285K
+| Cores: 24 | Logical Cores: 24
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 63747 | Free Memory: 54554
+| Total Page/Swap (MB): 8191 | Free Page/Swap: 8191
+|---------------------------------------------------------------------------------------------|
+2026-05-22 17:07:53 [2,331ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-05-22 17:07:53 [2,331ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 1531.82 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   1.37 
+
+   CPU     0 
+     0   1.54 
+2026-05-22 17:07:54 [3,514ms] [Warning] [omni.u[INFO]: Time taken for scene creation : 0.827987 seconds
+[INFO]: Scene manager:  <class InteractiveScene>
+	Number of environments: 64
+	Environment spacing   : 2.5
+	Source prim name      : /World/envs/env_0
+	Global prim paths     : ['/World/ground']
+	Replicate physics     : True
+[INFO]: Starting the simulation. This may take a few seconds. Please wait...
+[33m13:07:55 [articulation.py] WARNING: Spatial tendons are not supported in Isaac Sim < 5.0: patching spatial-tendon getter and setter to use dummy value[0m
+[INFO]: Time taken for simulation start : 0.481384 seconds
+[INFO] Command Manager:  <CommandManager> contains 1 active terms.
++---------------------------------------------+
+|             Active Command Terms            |
++-------+---------------+---------------------+
+| Index | Name          |         Type        |
++-------+---------------+---------------------+
+|   0   | base_velocity | MultiPlannerCommand |
++-------+---------------+---------------------+
+
+[INFO] Event Manager:  <EventManager> contains 3 active terms.
++--------------------------------------+
+| Active Event Terms in Mode: 'startup' |
++----------+---------------------------+
+|  Index   | Name                      |
++----------+---------------------------+
+|    0     | physics_material          |
+|    1     | add_base_mass             |
+|    2     | randomize_com             |
++----------+---------------------------+
++--------------------------------------+
+| Active Event Terms in Mode: 'reset'  |
++-------+------------------------------+
+| Index | Name                         |
++-------+------------------------------+
+|   0   | base_external_force_torque   |
+|   1   | reset_base                   |
+|   2   | reset_robot_joints           |
+|   3   | randomize_obstacles_position |
++-------+------------------------------+
++----------------------------------------------+
+|    Active Event Terms in Mode: 'interval'    |
++-------+------------+-------------------------+
+| Index | Name       | Interval time range (s) |
++-------+------------+-------------------------+
+|   0   | push_robot |       (5.0, 10.0)       |
++-------+------------+-------------------------+
+
+[INFO] Recorder Manager:  <RecorderManager> contains 0 active terms.
++---------------------+
+| Active Recorder Terms |
++-----------+---------+
+|   Index   | Name    |
++-----------+---------+
++-----------+---------+
+
+[INFO] Action Manager:  <ActionManager> contains 1 active terms.
++-----------------------------------+
+|   Active Action Terms (shape: 5)  |
++--------+-------------+------------+
+| Index  | Name        |  Dimension |
++--------+-------------+------------+
+|   0    | cbf_params  |          5 |
++--------+-------------+------------+
+
+[INFO] Observation Manager: <ObservationManager> contains 1 groups.
++------------------------------------------------------------+
+| Active Observation Terms in Group: 'policy' (shape: (8225,)) |
++----------+-----------------------------------+-------------+
+|  Index   | Name                              |    Shape    |
++----------+-----------------------------------+-------------+
+|    0     | friction                          |     (1,)    |
+|    1     | base_mass                         |     (1,)    |
+|    2     | applied_force                     |     (3,)    |
+|    3     | applied_torque                    |     (3,)    |
+|    4     | com_offset                        |     (3,)    |
+|    5     | actuation_noise_sigma             |     (1,)    |
+|    6     | mean_signed_delta_R               |     (1,)    |
+|    7     | max_abs_delta_R                   |     (1,)    |
+|    8     | base_height                       |     (1,)    |
+|    9     | tracking_err                      |    (15,)    |
+|    10    | base_ang_vel                      |     (3,)    |
+|    11    | obstacles                         |   (8192,)   |
++----------+-----------------------------------+-------------+
+
+[INFO] Termination Manager:  <TerminationManager> contains 4 active terms.
++-------------------------------------+
+|       Active Termination Terms      |
++-------+------------------+----------+
+| Index | Name             | Time Out |
++-------+------------------+----------+
+|   0   | time_out         |   True   |
+|   1   | base_contact     |  False   |
+|   2   | obstacle_contact |  False   |
+|   3   | goal_reached     |  False   |
++-------+------------------+----------+
+
+[INFO] Reward Manager:  <RewardManager> contains 17 active terms.
++---------------------------------------+
+|          Active Reward Terms          |
++-------+----------------------+--------+
+| Index | Name                 | Weight |
++-------+----------------------+--------+
+|   0   | collision            | -100.0 |
+|   1   | u_safe_deviation     |    0.0 |
+|   2   | infeasibility        |  -10.0 |
+|   3   | proximity            |    0.0 |
+|   4   | ttc_penalty          |    0.0 |
+|   5   | action_rate          |  -0.05 |
+|   6   | action_rate_split    |    0.0 |
+|   7   | base_contact_penalty | -500.0 |
+|   8   | stuck                |   -1.0 |
+|   9   | cbf_lhs_margin       |    0.0 |
+|   10  | velocity_along_cmd   |    0.0 |
+|   11  | velocity_tracking    |    1.5 |
+|   12  | tilt_penalty         |   -2.0 |
+|   13  | u_safe_rate          |    0.0 |
+|   14  | cbf_a_l1             |    0.0 |
+|   15  | cbf_phi_above_target |    0.0 |
+|   16  | cbf_deflection_l2    |    0.0 |
++-------+----------------------+--------+
+
+[INFO] Curriculum Manager:  <CurriculumManager> contains 0 active terms.
++----------------------+
+| Active Curriculum Terms |
++-----------+----------+
+|   Index   | Name     |
++-----------+----------+
++-----------+----------+
+
+[INFO]: Completed setting up the environment...
+[env] Isaac-CBF-Go2-Navigation-V15-Strict-v0, num_envs=64, device=cuda:0
+[eval] aligning PARAM_RANGES['c'] (0.0, 1.0) → env._c_param_range (-0.1000, -0.1000)
+[eval] aligning PARAM_RANGES['alpha'] (0.1, 5.0) → env._alpha_param_range (0.5000, 3.0000)
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.safety.cbf_go2.agents.rsl_rl_ppo_rma_cfg:CbfGo2RMAPPORunnerCfg
+[33m13:07:55 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+--------------------------------------------------------------------------------
+Resolved observation sets: 
+	 actor :  ['policy']
+	 critic :  ['policy']
+--------------------------------------------------------------------------------
+Actor Model: CbfTeacherRMAModel(
+  (obs_normalizer): Identity()
+  (distribution): GaussianDistribution()
+  (mlp): _SplitRMAMLP(
+    (0): _PrivEncoder(
+      (normalizer): _PrivRunningMeanStd()
+      (net): Sequential(
+        (0): Linear(in_features=14, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+        (2): Linear(in_features=64, out_features=64, bias=True)
+        (3): ELU(alpha=1.0)
+        (4): Linear(in_features=64, out_features=16, bias=True)
+        (5): ELU(alpha=1.0)
+      )
+    )
+    (1): _GridEncoder(
+      (conv): Sequential(
+        (0): Conv2d(2, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (1): ELU(alpha=1.0)
+        (2): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (3): ELU(alpha=1.0)
+      )
+      (proj): Sequential(
+        (0): Linear(in_features=8192, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+      )
+    )
+    (2): MLP(
+      (0): Linear(in_features=99, out_features=128, bias=True)
+      (1): ELU(alpha=1.0)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): ELU(alpha=1.0)
+      (4): Linear(in_features=128, out_features=5, bias=True)
+    )
+    (proprio_normalizer): _PrivRunningMeanStd()
+  )
+)
+Critic Model: CbfCriticRMAModel(
+  (obs_normalizer): Identity()
+  (mlp): _SplitRMAMLP(
+    (0): _PrivEncoder(
+      (normalizer): _PrivRunningMeanStd()
+      (net): Sequential(
+        (0): Linear(in_features=14, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+        (2): Linear(in_features=64, out_features=64, bias=True)
+        (3): ELU(alpha=1.0)
+        (4): Linear(in_features=64, out_features=16, bias=True)
+        (5): ELU(alpha=1.0)
+      )
+    )
+    (1): _GridEncoder(
+      (conv): Sequential(
+        (0): Conv2d(2, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (1): ELU(alpha=1.0)
+        (2): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (3): ELU(alpha=1.0)
+      )
+      (proj): Sequential(
+        (0): Linear(in_features=8192, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+      )
+    )
+    (2): MLP(
+      (0): Linear(in_features=99, out_features=128, bias=True)
+      (1): ELU(alpha=1.0)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): ELU(alpha=1.0)
+      (4): Linear(in_features=128, out_features=1, bias=True)
+    )
+    (proprio_normalizer): _PrivRunningMeanStd()
+  )
+)
+[sweep] 10 configs × 1000 steps each
+[33m13:08:02 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:08:07 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:08:12 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:08:17 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 1/10] B0_α=0.50                         eps= 99  coll=0.990  fall=0.000  stuck=0.000  v̄_xy=0.505  min_h̄=-0.082  close%=0.598  goal%=0.899
+[33m13:08:25 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:08:30 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:08:35 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:08:40 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 2/10] B0_α=2.00                         eps=105  coll=0.933  fall=0.029  stuck=0.000  v̄_xy=0.550  min_h̄=-0.071  close%=0.635  goal%=0.933
+[33m13:08:48 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:08:53 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:08:58 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:09:04 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 3/10] B0_α=3.00                         eps=103  coll=0.942  fall=0.049  stuck=0.000  v̄_xy=0.569  min_h̄=-0.079  close%=0.699  goal%=0.932
+[33m13:09:11 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:09:16 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:09:22 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:09:27 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 4/10] B1_α=0.50_φ=0.50                  eps= 85  coll=1.000  fall=0.000  stuck=0.000  v̄_xy=0.462  min_h̄=-0.057  close%=0.508  goal%=0.894
+[33m13:09:34 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:09:39 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:09:45 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:09:50 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 5/10] B1_α=0.50_φ=2.00                  eps= 74  coll=0.824  fall=0.014  stuck=0.000  v̄_xy=0.482  min_h̄=-0.013  close%=0.286  goal%=0.811
+[33m13:09:57 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:10:02 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:10:07 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:10:12 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 6/10] B1_α=2.00_φ=0.50                  eps=102  coll=0.980  fall=0.000  stuck=0.000  v̄_xy=0.552  min_h̄=-0.060  close%=0.661  goal%=0.931
+[33m13:10:17 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:10:22 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:10:28 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:10:33 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 7/10] B1_α=2.00_φ=2.00                  eps= 96  coll=0.958  fall=0.021  stuck=0.000  v̄_xy=0.534  min_h̄=-0.029  close%=0.413  goal%=0.896
+[33m13:10:40 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:10:45 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:10:50 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:10:56 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 8/10] B1_α=3.00_φ=0.50                  eps=106  coll=0.981  fall=0.019  stuck=0.000  v̄_xy=0.605  min_h̄=-0.073  close%=0.702  goal%=0.972
+[33m13:11:02 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:11:07 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:11:12 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:11:18 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 9/10] B1_α=3.00_φ=2.00                  eps=108  coll=0.972  fall=0.028  stuck=0.000  v̄_xy=0.565  min_h̄=-0.031  close%=0.534  goal%=0.898
+[33m13:11:23 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:11:28 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:11:34 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:11:39 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:11:44 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+
+─── wider_dr seed=123 ─── 13:11:45
+[3gH    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H [INFO] Using python from: /home/chrisliang/miniconda3/envs/isaaclab/bin/python
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/isaaclab.python.headless.kit
+[modes] ['B0', 'B1', 'BR']
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.safety.cbf_go2.cbf_go2_env_cfg:CbfGo2EnvCfg_NAVIGATION_V15_STRICT
+[eval] env_cfg.seed=123 (DR + episode init pinned)
+[eval] forced bimodal_resample=False, resample=(100,100) — deploy-realistic locked
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-05-22_13-11-48.log[0m
+[36m======================================================================================[0m
+
+[33m13:11:48 [stage.py] WARNING: Isaac Sim < 5.0 does not support thread-local stage contexts. Skipping use_stage().[0m
+[33m13:11:48 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 123
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m13:11:49 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+[Warning] [simulation_app.simulation_app] Modules: ['omni.kit_app'] were loaded before SimulationApp was started and might not be loaded correctly.
+[Warning] [simulation_app.simulation_app] Please check to make sure no extra omniverse or pxr modules are imported before the call to SimulationApp(...)
+Loading user config located at: '/home/chrisliang/miniconda3/envs/isaaclab/lib/python3.10/site-packages/omni/data/Kit/Isaac-Sim/4.5/user.config.json'
+[Info] [carb] Logging to file: /home/chrisliang/miniconda3/envs/isaaclab/lib/python3.10/site-packages/omni/logs/Kit/Isaac-Sim/4.5/kit_20260522_131145.log
+2026-05-22 17:11:45 [0ms] [Warning] [omni.kit.app.plugin] No crash reporter present, dumps uploading isn't available.
+2026-05-22 17:11:45 [2ms] [Warning] [omni.ext.plugin] [ext: rendering_modes] Extensions config 'extension.toml' doesn't exist '/home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/rendering_modes' or '/home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/rendering_modes/config'
+2026-05-22 17:11:45 [71ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-05-22 17:11:45 [114ms] [Warning] [omni.platforminfo.plugin] failed to open the default display.  Can't verify X Server version.
+2026-05-22 17:11:46 [248ms] [Warning] [omni.datastore] OmniHub is inaccessible
+2026-05-22 17:11:46 [292ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-05-22 17:11:47 [2,039ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+2026-05-22 17:11:47 [2,039ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 595.58.03     | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 5090          | Yes: 0 |     | 32853   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2b85      | a70cb704.. |
+|     |                                  |        |     |            | 2         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | Intel(R) Graphics (ARL)          |        |     | 47810   MB | 8086      | 0          |
+|     |                                  |        |     |            | 7d67      | 8680677d.. |
+|     |                                  |        |     |            | 0         |            |
+|=============================================================================================|
+| OS: 24.04.4 LTS (Noble Numbat) ubuntu, Version: 24.04.4, Kernel: 6.17.0-1023-oem
+| Processor: Intel(R) Core(TM) Ultra 9 285K
+| Cores: 24 | Logical Cores: 24
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 63747 | Free Memory: 54600
+| Total Page/Swap (MB): 8191 | Free Page/Swap: 8191
+|---------------------------------------------------------------------------------------------|
+2026-05-22 17:11:48 [2,277ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-05-22 17:11:48 [2,277ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 1533.37 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   1.08 
+
+   CPU     0 
+     0   1.53 
+2026-05-22 17:11:49 [3,384ms] [Warning] [omni.u[INFO]: Time taken for scene creation : 0.732929 seconds
+[INFO]: Scene manager:  <class InteractiveScene>
+	Number of environments: 64
+	Environment spacing   : 2.5
+	Source prim name      : /World/envs/env_0
+	Global prim paths     : ['/World/ground']
+	Replicate physics     : True
+[INFO]: Starting the simulation. This may take a few seconds. Please wait...
+[33m13:11:49 [articulation.py] WARNING: Spatial tendons are not supported in Isaac Sim < 5.0: patching spatial-tendon getter and setter to use dummy value[0m
+[INFO]: Time taken for simulation start : 0.470685 seconds
+[INFO] Command Manager:  <CommandManager> contains 1 active terms.
++---------------------------------------------+
+|             Active Command Terms            |
++-------+---------------+---------------------+
+| Index | Name          |         Type        |
++-------+---------------+---------------------+
+|   0   | base_velocity | MultiPlannerCommand |
++-------+---------------+---------------------+
+
+[INFO] Event Manager:  <EventManager> contains 3 active terms.
++--------------------------------------+
+| Active Event Terms in Mode: 'startup' |
++----------+---------------------------+
+|  Index   | Name                      |
++----------+---------------------------+
+|    0     | physics_material          |
+|    1     | add_base_mass             |
+|    2     | randomize_com             |
++----------+---------------------------+
++--------------------------------------+
+| Active Event Terms in Mode: 'reset'  |
++-------+------------------------------+
+| Index | Name                         |
++-------+------------------------------+
+|   0   | base_external_force_torque   |
+|   1   | reset_base                   |
+|   2   | reset_robot_joints           |
+|   3   | randomize_obstacles_position |
++-------+------------------------------+
++----------------------------------------------+
+|    Active Event Terms in Mode: 'interval'    |
++-------+------------+-------------------------+
+| Index | Name       | Interval time range (s) |
++-------+------------+-------------------------+
+|   0   | push_robot |       (5.0, 10.0)       |
++-------+------------+-------------------------+
+
+[INFO] Recorder Manager:  <RecorderManager> contains 0 active terms.
++---------------------+
+| Active Recorder Terms |
++-----------+---------+
+|   Index   | Name    |
++-----------+---------+
++-----------+---------+
+
+[INFO] Action Manager:  <ActionManager> contains 1 active terms.
++-----------------------------------+
+|   Active Action Terms (shape: 5)  |
++--------+-------------+------------+
+| Index  | Name        |  Dimension |
++--------+-------------+------------+
+|   0    | cbf_params  |          5 |
++--------+-------------+------------+
+
+[INFO] Observation Manager: <ObservationManager> contains 1 groups.
++------------------------------------------------------------+
+| Active Observation Terms in Group: 'policy' (shape: (8225,)) |
++----------+-----------------------------------+-------------+
+|  Index   | Name                              |    Shape    |
++----------+-----------------------------------+-------------+
+|    0     | friction                          |     (1,)    |
+|    1     | base_mass                         |     (1,)    |
+|    2     | applied_force                     |     (3,)    |
+|    3     | applied_torque                    |     (3,)    |
+|    4     | com_offset                        |     (3,)    |
+|    5     | actuation_noise_sigma             |     (1,)    |
+|    6     | mean_signed_delta_R               |     (1,)    |
+|    7     | max_abs_delta_R                   |     (1,)    |
+|    8     | base_height                       |     (1,)    |
+|    9     | tracking_err                      |    (15,)    |
+|    10    | base_ang_vel                      |     (3,)    |
+|    11    | obstacles                         |   (8192,)   |
++----------+-----------------------------------+-------------+
+
+[INFO] Termination Manager:  <TerminationManager> contains 4 active terms.
++-------------------------------------+
+|       Active Termination Terms      |
++-------+------------------+----------+
+| Index | Name             | Time Out |
++-------+------------------+----------+
+|   0   | time_out         |   True   |
+|   1   | base_contact     |  False   |
+|   2   | obstacle_contact |  False   |
+|   3   | goal_reached     |  False   |
++-------+------------------+----------+
+
+[INFO] Reward Manager:  <RewardManager> contains 17 active terms.
++---------------------------------------+
+|          Active Reward Terms          |
++-------+----------------------+--------+
+| Index | Name                 | Weight |
++-------+----------------------+--------+
+|   0   | collision            | -100.0 |
+|   1   | u_safe_deviation     |    0.0 |
+|   2   | infeasibility        |  -10.0 |
+|   3   | proximity            |    0.0 |
+|   4   | ttc_penalty          |    0.0 |
+|   5   | action_rate          |  -0.05 |
+|   6   | action_rate_split    |    0.0 |
+|   7   | base_contact_penalty | -500.0 |
+|   8   | stuck                |   -1.0 |
+|   9   | cbf_lhs_margin       |    0.0 |
+|   10  | velocity_along_cmd   |    0.0 |
+|   11  | velocity_tracking    |    1.5 |
+|   12  | tilt_penalty         |   -2.0 |
+|   13  | u_safe_rate          |    0.0 |
+|   14  | cbf_a_l1             |    0.0 |
+|   15  | cbf_phi_above_target |    0.0 |
+|   16  | cbf_deflection_l2    |    0.0 |
++-------+----------------------+--------+
+
+[INFO] Curriculum Manager:  <CurriculumManager> contains 0 active terms.
++----------------------+
+| Active Curriculum Terms |
++-----------+----------+
+|   Index   | Name     |
++-----------+----------+
++-----------+----------+
+
+[INFO]: Completed setting up the environment...
+[env] Isaac-CBF-Go2-Navigation-V15-Strict-v0, num_envs=64, device=cuda:0
+[eval] aligning PARAM_RANGES['c'] (0.0, 1.0) → env._c_param_range (-0.1000, -0.1000)
+[eval] aligning PARAM_RANGES['alpha'] (0.1, 5.0) → env._alpha_param_range (0.5000, 3.0000)
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.safety.cbf_go2.agents.rsl_rl_ppo_rma_cfg:CbfGo2RMAPPORunnerCfg
+[33m13:11:50 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+--------------------------------------------------------------------------------
+Resolved observation sets: 
+	 actor :  ['policy']
+	 critic :  ['policy']
+--------------------------------------------------------------------------------
+Actor Model: CbfTeacherRMAModel(
+  (obs_normalizer): Identity()
+  (distribution): GaussianDistribution()
+  (mlp): _SplitRMAMLP(
+    (0): _PrivEncoder(
+      (normalizer): _PrivRunningMeanStd()
+      (net): Sequential(
+        (0): Linear(in_features=14, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+        (2): Linear(in_features=64, out_features=64, bias=True)
+        (3): ELU(alpha=1.0)
+        (4): Linear(in_features=64, out_features=16, bias=True)
+        (5): ELU(alpha=1.0)
+      )
+    )
+    (1): _GridEncoder(
+      (conv): Sequential(
+        (0): Conv2d(2, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (1): ELU(alpha=1.0)
+        (2): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (3): ELU(alpha=1.0)
+      )
+      (proj): Sequential(
+        (0): Linear(in_features=8192, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+      )
+    )
+    (2): MLP(
+      (0): Linear(in_features=99, out_features=128, bias=True)
+      (1): ELU(alpha=1.0)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): ELU(alpha=1.0)
+      (4): Linear(in_features=128, out_features=5, bias=True)
+    )
+    (proprio_normalizer): _PrivRunningMeanStd()
+  )
+)
+Critic Model: CbfCriticRMAModel(
+  (obs_normalizer): Identity()
+  (mlp): _SplitRMAMLP(
+    (0): _PrivEncoder(
+      (normalizer): _PrivRunningMeanStd()
+      (net): Sequential(
+        (0): Linear(in_features=14, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+        (2): Linear(in_features=64, out_features=64, bias=True)
+        (3): ELU(alpha=1.0)
+        (4): Linear(in_features=64, out_features=16, bias=True)
+        (5): ELU(alpha=1.0)
+      )
+    )
+    (1): _GridEncoder(
+      (conv): Sequential(
+        (0): Conv2d(2, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (1): ELU(alpha=1.0)
+        (2): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (3): ELU(alpha=1.0)
+      )
+      (proj): Sequential(
+        (0): Linear(in_features=8192, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+      )
+    )
+    (2): MLP(
+      (0): Linear(in_features=99, out_features=128, bias=True)
+      (1): ELU(alpha=1.0)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): ELU(alpha=1.0)
+      (4): Linear(in_features=128, out_features=1, bias=True)
+    )
+    (proprio_normalizer): _PrivRunningMeanStd()
+  )
+)
+[sweep] 10 configs × 1000 steps each
+[33m13:11:56 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:12:01 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:12:06 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:12:11 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 1/10] B0_α=0.50                         eps= 99  coll=0.990  fall=0.000  stuck=0.000  v̄_xy=0.505  min_h̄=-0.082  close%=0.598  goal%=0.899
+[33m13:12:18 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:12:23 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:12:28 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:12:33 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 2/10] B0_α=2.00                         eps=105  coll=0.933  fall=0.029  stuck=0.000  v̄_xy=0.550  min_h̄=-0.071  close%=0.635  goal%=0.933
+[33m13:12:41 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:12:46 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:12:51 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:12:56 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 3/10] B0_α=3.00                         eps=103  coll=0.942  fall=0.049  stuck=0.000  v̄_xy=0.569  min_h̄=-0.079  close%=0.699  goal%=0.932
+[33m13:13:03 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:13:08 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:13:14 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:13:19 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 4/10] B1_α=0.50_φ=0.50                  eps= 85  coll=1.000  fall=0.000  stuck=0.000  v̄_xy=0.462  min_h̄=-0.057  close%=0.508  goal%=0.894
+[33m13:13:26 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:13:32 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:13:37 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:13:42 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 5/10] B1_α=0.50_φ=2.00                  eps= 74  coll=0.824  fall=0.014  stuck=0.000  v̄_xy=0.482  min_h̄=-0.013  close%=0.286  goal%=0.811
+[33m13:13:48 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:13:53 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:13:59 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:14:04 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 6/10] B1_α=2.00_φ=0.50                  eps=102  coll=0.980  fall=0.000  stuck=0.000  v̄_xy=0.552  min_h̄=-0.060  close%=0.661  goal%=0.931
+[33m13:14:09 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:14:14 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:14:19 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:14:24 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 7/10] B1_α=2.00_φ=2.00                  eps= 96  coll=0.958  fall=0.021  stuck=0.000  v̄_xy=0.534  min_h̄=-0.029  close%=0.413  goal%=0.896
+[33m13:14:31 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:14:36 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:14:42 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:14:47 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 8/10] B1_α=3.00_φ=0.50                  eps=106  coll=0.981  fall=0.019  stuck=0.000  v̄_xy=0.605  min_h̄=-0.073  close%=0.702  goal%=0.972
+[33m13:14:52 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:14:57 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:15:02 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:15:08 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 9/10] B1_α=3.00_φ=2.00                  eps=108  coll=0.972  fall=0.028  stuck=0.000  v̄_xy=0.565  min_h̄=-0.031  close%=0.534  goal%=0.898
+[33m13:15:14 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:15:19 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:15:24 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:15:29 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:15:34 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+
+─── twostream_base seed=7 ─── 13:15:36
+[3gH    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H [INFO] Using python from: /home/chrisliang/miniconda3/envs/isaaclab/bin/python
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/isaaclab.python.headless.kit
+[modes] ['B0', 'B1', 'BR']
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.safety.cbf_go2.cbf_go2_env_cfg:CbfGo2EnvCfg_NAVIGATION_V15_STRICT
+[eval] env_cfg.seed=7 (DR + episode init pinned)
+[eval] forced bimodal_resample=False, resample=(100,100) — deploy-realistic locked
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-05-22_13-15-39.log[0m
+[36m======================================================================================[0m
+
+[33m13:15:39 [stage.py] WARNING: Isaac Sim < 5.0 does not support thread-local stage contexts. Skipping use_stage().[0m
+[33m13:15:39 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 7
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m13:15:39 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+[Warning] [simulation_app.simulation_app] Modules: ['omni.kit_app'] were loaded before SimulationApp was started and might not be loaded correctly.
+[Warning] [simulation_app.simulation_app] Please check to make sure no extra omniverse or pxr modules are imported before the call to SimulationApp(...)
+Loading user config located at: '/home/chrisliang/miniconda3/envs/isaaclab/lib/python3.10/site-packages/omni/data/Kit/Isaac-Sim/4.5/user.config.json'
+[Info] [carb] Logging to file: /home/chrisliang/miniconda3/envs/isaaclab/lib/python3.10/site-packages/omni/logs/Kit/Isaac-Sim/4.5/kit_20260522_131536.log
+2026-05-22 17:15:36 [0ms] [Warning] [omni.kit.app.plugin] No crash reporter present, dumps uploading isn't available.
+2026-05-22 17:15:36 [2ms] [Warning] [omni.ext.plugin] [ext: rendering_modes] Extensions config 'extension.toml' doesn't exist '/home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/rendering_modes' or '/home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/rendering_modes/config'
+2026-05-22 17:15:36 [70ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-05-22 17:15:36 [113ms] [Warning] [omni.platforminfo.plugin] failed to open the default display.  Can't verify X Server version.
+2026-05-22 17:15:36 [244ms] [Warning] [omni.datastore] OmniHub is inaccessible
+2026-05-22 17:15:36 [290ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-05-22 17:15:38 [2,076ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+2026-05-22 17:15:38 [2,076ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 595.58.03     | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 5090          | Yes: 0 |     | 32853   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2b85      | a70cb704.. |
+|     |                                  |        |     |            | 2         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | Intel(R) Graphics (ARL)          |        |     | 47810   MB | 8086      | 0          |
+|     |                                  |        |     |            | 7d67      | 8680677d.. |
+|     |                                  |        |     |            | 0         |            |
+|=============================================================================================|
+| OS: 24.04.4 LTS (Noble Numbat) ubuntu, Version: 24.04.4, Kernel: 6.17.0-1023-oem
+| Processor: Intel(R) Core(TM) Ultra 9 285K
+| Cores: 24 | Logical Cores: 24
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 63747 | Free Memory: 54540
+| Total Page/Swap (MB): 8191 | Free Page/Swap: 8191
+|---------------------------------------------------------------------------------------------|
+2026-05-22 17:15:38 [2,316ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-05-22 17:15:38 [2,316ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 1531.86 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   1.10 
+
+   CPU     0 
+     0   1.54 
+2026-05-22 17:15:39 [3,416ms] [Warning] [omni.u[INFO]: Time taken for scene creation : 0.742872 seconds
+[INFO]: Scene manager:  <class InteractiveScene>
+	Number of environments: 64
+	Environment spacing   : 2.5
+	Source prim name      : /World/envs/env_0
+	Global prim paths     : ['/World/ground']
+	Replicate physics     : True
+[INFO]: Starting the simulation. This may take a few seconds. Please wait...
+[33m13:15:40 [articulation.py] WARNING: Spatial tendons are not supported in Isaac Sim < 5.0: patching spatial-tendon getter and setter to use dummy value[0m
+[INFO]: Time taken for simulation start : 0.469331 seconds
+[INFO] Command Manager:  <CommandManager> contains 1 active terms.
++---------------------------------------------+
+|             Active Command Terms            |
++-------+---------------+---------------------+
+| Index | Name          |         Type        |
++-------+---------------+---------------------+
+|   0   | base_velocity | MultiPlannerCommand |
++-------+---------------+---------------------+
+
+[INFO] Event Manager:  <EventManager> contains 3 active terms.
++--------------------------------------+
+| Active Event Terms in Mode: 'startup' |
++----------+---------------------------+
+|  Index   | Name                      |
++----------+---------------------------+
+|    0     | physics_material          |
+|    1     | add_base_mass             |
+|    2     | randomize_com             |
++----------+---------------------------+
++--------------------------------------+
+| Active Event Terms in Mode: 'reset'  |
++-------+------------------------------+
+| Index | Name                         |
++-------+------------------------------+
+|   0   | base_external_force_torque   |
+|   1   | reset_base                   |
+|   2   | reset_robot_joints           |
+|   3   | randomize_obstacles_position |
++-------+------------------------------+
++----------------------------------------------+
+|    Active Event Terms in Mode: 'interval'    |
++-------+------------+-------------------------+
+| Index | Name       | Interval time range (s) |
++-------+------------+-------------------------+
+|   0   | push_robot |       (5.0, 10.0)       |
++-------+------------+-------------------------+
+
+[INFO] Recorder Manager:  <RecorderManager> contains 0 active terms.
++---------------------+
+| Active Recorder Terms |
++-----------+---------+
+|   Index   | Name    |
++-----------+---------+
++-----------+---------+
+
+[INFO] Action Manager:  <ActionManager> contains 1 active terms.
++-----------------------------------+
+|   Active Action Terms (shape: 5)  |
++--------+-------------+------------+
+| Index  | Name        |  Dimension |
++--------+-------------+------------+
+|   0    | cbf_params  |          5 |
++--------+-------------+------------+
+
+[INFO] Observation Manager: <ObservationManager> contains 1 groups.
++------------------------------------------------------------+
+| Active Observation Terms in Group: 'policy' (shape: (8225,)) |
++----------+-----------------------------------+-------------+
+|  Index   | Name                              |    Shape    |
++----------+-----------------------------------+-------------+
+|    0     | friction                          |     (1,)    |
+|    1     | base_mass                         |     (1,)    |
+|    2     | applied_force                     |     (3,)    |
+|    3     | applied_torque                    |     (3,)    |
+|    4     | com_offset                        |     (3,)    |
+|    5     | actuation_noise_sigma             |     (1,)    |
+|    6     | mean_signed_delta_R               |     (1,)    |
+|    7     | max_abs_delta_R                   |     (1,)    |
+|    8     | base_height                       |     (1,)    |
+|    9     | tracking_err                      |    (15,)    |
+|    10    | base_ang_vel                      |     (3,)    |
+|    11    | obstacles                         |   (8192,)   |
++----------+-----------------------------------+-------------+
+
+[INFO] Termination Manager:  <TerminationManager> contains 4 active terms.
++-------------------------------------+
+|       Active Termination Terms      |
++-------+------------------+----------+
+| Index | Name             | Time Out |
++-------+------------------+----------+
+|   0   | time_out         |   True   |
+|   1   | base_contact     |  False   |
+|   2   | obstacle_contact |  False   |
+|   3   | goal_reached     |  False   |
++-------+------------------+----------+
+
+[INFO] Reward Manager:  <RewardManager> contains 17 active terms.
++---------------------------------------+
+|          Active Reward Terms          |
++-------+----------------------+--------+
+| Index | Name                 | Weight |
++-------+----------------------+--------+
+|   0   | collision            | -100.0 |
+|   1   | u_safe_deviation     |    0.0 |
+|   2   | infeasibility        |  -10.0 |
+|   3   | proximity            |    0.0 |
+|   4   | ttc_penalty          |    0.0 |
+|   5   | action_rate          |  -0.05 |
+|   6   | action_rate_split    |    0.0 |
+|   7   | base_contact_penalty | -500.0 |
+|   8   | stuck                |   -1.0 |
+|   9   | cbf_lhs_margin       |    0.0 |
+|   10  | velocity_along_cmd   |    0.0 |
+|   11  | velocity_tracking    |    1.5 |
+|   12  | tilt_penalty         |   -2.0 |
+|   13  | u_safe_rate          |    0.0 |
+|   14  | cbf_a_l1             |    0.0 |
+|   15  | cbf_phi_above_target |    0.0 |
+|   16  | cbf_deflection_l2    |    0.0 |
++-------+----------------------+--------+
+
+[INFO] Curriculum Manager:  <CurriculumManager> contains 0 active terms.
++----------------------+
+| Active Curriculum Terms |
++-----------+----------+
+|   Index   | Name     |
++-----------+----------+
++-----------+----------+
+
+[INFO]: Completed setting up the environment...
+[env] Isaac-CBF-Go2-Navigation-V15-Strict-v0, num_envs=64, device=cuda:0
+[eval] aligning PARAM_RANGES['c'] (0.0, 1.0) → env._c_param_range (-0.1000, -0.1000)
+[eval] aligning PARAM_RANGES['alpha'] (0.1, 5.0) → env._alpha_param_range (0.5000, 3.0000)
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.safety.cbf_go2.agents.rsl_rl_ppo_rma_cfg:CbfGo2RMAPPORunnerCfg
+[33m13:15:40 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+--------------------------------------------------------------------------------
+Resolved observation sets: 
+	 actor :  ['policy']
+	 critic :  ['policy']
+--------------------------------------------------------------------------------
+Actor Model: CbfTeacherRMAModel(
+  (obs_normalizer): Identity()
+  (distribution): GaussianDistribution()
+  (mlp): _SplitRMAMLP(
+    (0): _PrivEncoder(
+      (normalizer): _PrivRunningMeanStd()
+      (net): Sequential(
+        (0): Linear(in_features=14, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+        (2): Linear(in_features=64, out_features=64, bias=True)
+        (3): ELU(alpha=1.0)
+        (4): Linear(in_features=64, out_features=16, bias=True)
+        (5): ELU(alpha=1.0)
+      )
+    )
+    (1): _GridEncoder(
+      (conv): Sequential(
+        (0): Conv2d(2, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (1): ELU(alpha=1.0)
+        (2): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (3): ELU(alpha=1.0)
+      )
+      (proj): Sequential(
+        (0): Linear(in_features=8192, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+      )
+    )
+    (2): MLP(
+      (0): Linear(in_features=99, out_features=128, bias=True)
+      (1): ELU(alpha=1.0)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): ELU(alpha=1.0)
+      (4): Linear(in_features=128, out_features=5, bias=True)
+    )
+    (proprio_normalizer): _PrivRunningMeanStd()
+  )
+)
+Critic Model: CbfCriticRMAModel(
+  (obs_normalizer): Identity()
+  (mlp): _SplitRMAMLP(
+    (0): _PrivEncoder(
+      (normalizer): _PrivRunningMeanStd()
+      (net): Sequential(
+        (0): Linear(in_features=14, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+        (2): Linear(in_features=64, out_features=64, bias=True)
+        (3): ELU(alpha=1.0)
+        (4): Linear(in_features=64, out_features=16, bias=True)
+        (5): ELU(alpha=1.0)
+      )
+    )
+    (1): _GridEncoder(
+      (conv): Sequential(
+        (0): Conv2d(2, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (1): ELU(alpha=1.0)
+        (2): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (3): ELU(alpha=1.0)
+      )
+      (proj): Sequential(
+        (0): Linear(in_features=8192, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+      )
+    )
+    (2): MLP(
+      (0): Linear(in_features=99, out_features=128, bias=True)
+      (1): ELU(alpha=1.0)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): ELU(alpha=1.0)
+      (4): Linear(in_features=128, out_features=1, bias=True)
+    )
+    (proprio_normalizer): _PrivRunningMeanStd()
+  )
+)
+[sweep] 10 configs × 1000 steps each
+[33m13:15:46 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:15:52 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:15:57 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:16:02 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 1/10] B0_α=0.50                         eps=107  coll=0.972  fall=0.019  stuck=0.000  v̄_xy=0.540  min_h̄=-0.072  close%=0.606  goal%=0.916
+[33m13:16:08 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:16:13 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:16:18 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:16:23 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 2/10] B0_α=2.00                         eps=108  coll=0.981  fall=0.000  stuck=0.009  v̄_xy=0.590  min_h̄=-0.085  close%=0.668  goal%=0.963
+[33m13:16:32 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:16:37 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:16:42 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:16:47 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 3/10] B0_α=3.00                         eps=112  coll=0.991  fall=0.009  stuck=0.000  v̄_xy=0.638  min_h̄=-0.091  close%=0.724  goal%=0.991
+[33m13:16:54 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:16:59 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:17:04 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:17:09 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 4/10] B1_α=0.50_φ=0.50                  eps=100  coll=0.970  fall=0.020  stuck=0.000  v̄_xy=0.506  min_h̄=-0.047  close%=0.522  goal%=0.890
+[33m13:17:16 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:17:21 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:17:26 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:17:31 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 5/10] B1_α=0.50_φ=2.00                  eps= 87  coll=0.874  fall=0.011  stuck=0.000  v̄_xy=0.516  min_h̄=-0.034  close%=0.324  goal%=0.839
+[33m13:17:37 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:17:42 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:17:47 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:17:52 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:17:57 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 6/10] B1_α=2.00_φ=0.50                  eps=109  coll=0.972  fall=0.009  stuck=0.000  v̄_xy=0.565  min_h̄=-0.063  close%=0.656  goal%=0.908
+[33m13:18:03 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:18:08 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:18:13 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:18:18 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 7/10] B1_α=2.00_φ=2.00                  eps=103  coll=0.971  fall=0.019  stuck=0.000  v̄_xy=0.574  min_h̄=-0.034  close%=0.434  goal%=0.874
+[33m13:18:25 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:18:30 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:18:35 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:18:40 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 8/10] B1_α=3.00_φ=0.50                  eps=114  coll=0.956  fall=0.026  stuck=0.000  v̄_xy=0.590  min_h̄=-0.063  close%=0.647  goal%=0.939
+[33m13:18:47 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:18:52 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:18:57 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:19:02 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 9/10] B1_α=3.00_φ=2.00                  eps=105  coll=0.971  fall=0.000  stuck=0.000  v̄_xy=0.568  min_h̄=-0.041  close%=0.545  goal%=0.886
+[33m13:19:11 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:19:16 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:19:22 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:19:27 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+
+─── wider_dr seed=7 ─── 13:19:31
+[3gH    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H    H [INFO] Using python from: /home/chrisliang/miniconda3/envs/isaaclab/bin/python
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/isaaclab.python.headless.kit
+[modes] ['B0', 'B1', 'BR']
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.safety.cbf_go2.cbf_go2_env_cfg:CbfGo2EnvCfg_NAVIGATION_V15_STRICT
+[eval] env_cfg.seed=7 (DR + episode init pinned)
+[eval] forced bimodal_resample=False, resample=(100,100) — deploy-realistic locked
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-05-22_13-19-34.log[0m
+[36m======================================================================================[0m
+
+[33m13:19:34 [stage.py] WARNING: Isaac Sim < 5.0 does not support thread-local stage contexts. Skipping use_stage().[0m
+[33m13:19:34 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 7
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m13:19:34 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+[Warning] [simulation_app.simulation_app] Modules: ['omni.kit_app'] were loaded before SimulationApp was started and might not be loaded correctly.
+[Warning] [simulation_app.simulation_app] Please check to make sure no extra omniverse or pxr modules are imported before the call to SimulationApp(...)
+Loading user config located at: '/home/chrisliang/miniconda3/envs/isaaclab/lib/python3.10/site-packages/omni/data/Kit/Isaac-Sim/4.5/user.config.json'
+[Info] [carb] Logging to file: /home/chrisliang/miniconda3/envs/isaaclab/lib/python3.10/site-packages/omni/logs/Kit/Isaac-Sim/4.5/kit_20260522_131931.log
+2026-05-22 17:19:31 [0ms] [Warning] [omni.kit.app.plugin] No crash reporter present, dumps uploading isn't available.
+2026-05-22 17:19:31 [1ms] [Warning] [omni.ext.plugin] [ext: rendering_modes] Extensions config 'extension.toml' doesn't exist '/home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/rendering_modes' or '/home/chrisliang/Desktop/safety-go2/IsaacLab/apps/isaacsim_4_5/rendering_modes/config'
+2026-05-22 17:19:31 [71ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-05-22 17:19:31 [113ms] [Warning] [omni.platforminfo.plugin] failed to open the default display.  Can't verify X Server version.
+2026-05-22 17:19:31 [248ms] [Warning] [omni.datastore] OmniHub is inaccessible
+2026-05-22 17:19:31 [294ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-05-22 17:19:33 [2,089ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+2026-05-22 17:19:33 [2,089ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (ARL)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 595.58.03     | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 5090          | Yes: 0 |     | 32853   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2b85      | a70cb704.. |
+|     |                                  |        |     |            | 2         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | Intel(R) Graphics (ARL)          |        |     | 47810   MB | 8086      | 0          |
+|     |                                  |        |     |            | 7d67      | 8680677d.. |
+|     |                                  |        |     |            | 0         |            |
+|=============================================================================================|
+| OS: 24.04.4 LTS (Noble Numbat) ubuntu, Version: 24.04.4, Kernel: 6.17.0-1023-oem
+| Processor: Intel(R) Core(TM) Ultra 9 285K
+| Cores: 24 | Logical Cores: 24
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 63747 | Free Memory: 54553
+| Total Page/Swap (MB): 8191 | Free Page/Swap: 8191
+|---------------------------------------------------------------------------------------------|
+2026-05-22 17:19:33 [2,330ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-05-22 17:19:33 [2,330ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 1530.36 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   1.11 
+
+   CPU     0 
+     0   1.50 
+2026-05-22 17:19:34 [3,532ms] [Warning] [omni.u[INFO]: Time taken for scene creation : 0.838064 seconds
+[INFO]: Scene manager:  <class InteractiveScene>
+	Number of environments: 64
+	Environment spacing   : 2.5
+	Source prim name      : /World/envs/env_0
+	Global prim paths     : ['/World/ground']
+	Replicate physics     : True
+[INFO]: Starting the simulation. This may take a few seconds. Please wait...
+[33m13:19:35 [articulation.py] WARNING: Spatial tendons are not supported in Isaac Sim < 5.0: patching spatial-tendon getter and setter to use dummy value[0m
+[INFO]: Time taken for simulation start : 0.485262 seconds
+[INFO] Command Manager:  <CommandManager> contains 1 active terms.
++---------------------------------------------+
+|             Active Command Terms            |
++-------+---------------+---------------------+
+| Index | Name          |         Type        |
++-------+---------------+---------------------+
+|   0   | base_velocity | MultiPlannerCommand |
++-------+---------------+---------------------+
+
+[INFO] Event Manager:  <EventManager> contains 3 active terms.
++--------------------------------------+
+| Active Event Terms in Mode: 'startup' |
++----------+---------------------------+
+|  Index   | Name                      |
++----------+---------------------------+
+|    0     | physics_material          |
+|    1     | add_base_mass             |
+|    2     | randomize_com             |
++----------+---------------------------+
++--------------------------------------+
+| Active Event Terms in Mode: 'reset'  |
++-------+------------------------------+
+| Index | Name                         |
++-------+------------------------------+
+|   0   | base_external_force_torque   |
+|   1   | reset_base                   |
+|   2   | reset_robot_joints           |
+|   3   | randomize_obstacles_position |
++-------+------------------------------+
++----------------------------------------------+
+|    Active Event Terms in Mode: 'interval'    |
++-------+------------+-------------------------+
+| Index | Name       | Interval time range (s) |
++-------+------------+-------------------------+
+|   0   | push_robot |       (5.0, 10.0)       |
++-------+------------+-------------------------+
+
+[INFO] Recorder Manager:  <RecorderManager> contains 0 active terms.
++---------------------+
+| Active Recorder Terms |
++-----------+---------+
+|   Index   | Name    |
++-----------+---------+
++-----------+---------+
+
+[INFO] Action Manager:  <ActionManager> contains 1 active terms.
++-----------------------------------+
+|   Active Action Terms (shape: 5)  |
++--------+-------------+------------+
+| Index  | Name        |  Dimension |
++--------+-------------+------------+
+|   0    | cbf_params  |          5 |
++--------+-------------+------------+
+
+[INFO] Observation Manager: <ObservationManager> contains 1 groups.
++------------------------------------------------------------+
+| Active Observation Terms in Group: 'policy' (shape: (8225,)) |
++----------+-----------------------------------+-------------+
+|  Index   | Name                              |    Shape    |
++----------+-----------------------------------+-------------+
+|    0     | friction                          |     (1,)    |
+|    1     | base_mass                         |     (1,)    |
+|    2     | applied_force                     |     (3,)    |
+|    3     | applied_torque                    |     (3,)    |
+|    4     | com_offset                        |     (3,)    |
+|    5     | actuation_noise_sigma             |     (1,)    |
+|    6     | mean_signed_delta_R               |     (1,)    |
+|    7     | max_abs_delta_R                   |     (1,)    |
+|    8     | base_height                       |     (1,)    |
+|    9     | tracking_err                      |    (15,)    |
+|    10    | base_ang_vel                      |     (3,)    |
+|    11    | obstacles                         |   (8192,)   |
++----------+-----------------------------------+-------------+
+
+[INFO] Termination Manager:  <TerminationManager> contains 4 active terms.
++-------------------------------------+
+|       Active Termination Terms      |
++-------+------------------+----------+
+| Index | Name             | Time Out |
++-------+------------------+----------+
+|   0   | time_out         |   True   |
+|   1   | base_contact     |  False   |
+|   2   | obstacle_contact |  False   |
+|   3   | goal_reached     |  False   |
++-------+------------------+----------+
+
+[INFO] Reward Manager:  <RewardManager> contains 17 active terms.
++---------------------------------------+
+|          Active Reward Terms          |
++-------+----------------------+--------+
+| Index | Name                 | Weight |
++-------+----------------------+--------+
+|   0   | collision            | -100.0 |
+|   1   | u_safe_deviation     |    0.0 |
+|   2   | infeasibility        |  -10.0 |
+|   3   | proximity            |    0.0 |
+|   4   | ttc_penalty          |    0.0 |
+|   5   | action_rate          |  -0.05 |
+|   6   | action_rate_split    |    0.0 |
+|   7   | base_contact_penalty | -500.0 |
+|   8   | stuck                |   -1.0 |
+|   9   | cbf_lhs_margin       |    0.0 |
+|   10  | velocity_along_cmd   |    0.0 |
+|   11  | velocity_tracking    |    1.5 |
+|   12  | tilt_penalty         |   -2.0 |
+|   13  | u_safe_rate          |    0.0 |
+|   14  | cbf_a_l1             |    0.0 |
+|   15  | cbf_phi_above_target |    0.0 |
+|   16  | cbf_deflection_l2    |    0.0 |
++-------+----------------------+--------+
+
+[INFO] Curriculum Manager:  <CurriculumManager> contains 0 active terms.
++----------------------+
+| Active Curriculum Terms |
++-----------+----------+
+|   Index   | Name     |
++-----------+----------+
++-----------+----------+
+
+[INFO]: Completed setting up the environment...
+[env] Isaac-CBF-Go2-Navigation-V15-Strict-v0, num_envs=64, device=cuda:0
+[eval] aligning PARAM_RANGES['c'] (0.0, 1.0) → env._c_param_range (-0.1000, -0.1000)
+[eval] aligning PARAM_RANGES['alpha'] (0.1, 5.0) → env._alpha_param_range (0.5000, 3.0000)
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.safety.cbf_go2.agents.rsl_rl_ppo_rma_cfg:CbfGo2RMAPPORunnerCfg
+[33m13:19:35 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+--------------------------------------------------------------------------------
+Resolved observation sets: 
+	 actor :  ['policy']
+	 critic :  ['policy']
+--------------------------------------------------------------------------------
+Actor Model: CbfTeacherRMAModel(
+  (obs_normalizer): Identity()
+  (distribution): GaussianDistribution()
+  (mlp): _SplitRMAMLP(
+    (0): _PrivEncoder(
+      (normalizer): _PrivRunningMeanStd()
+      (net): Sequential(
+        (0): Linear(in_features=14, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+        (2): Linear(in_features=64, out_features=64, bias=True)
+        (3): ELU(alpha=1.0)
+        (4): Linear(in_features=64, out_features=16, bias=True)
+        (5): ELU(alpha=1.0)
+      )
+    )
+    (1): _GridEncoder(
+      (conv): Sequential(
+        (0): Conv2d(2, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (1): ELU(alpha=1.0)
+        (2): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (3): ELU(alpha=1.0)
+      )
+      (proj): Sequential(
+        (0): Linear(in_features=8192, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+      )
+    )
+    (2): MLP(
+      (0): Linear(in_features=99, out_features=128, bias=True)
+      (1): ELU(alpha=1.0)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): ELU(alpha=1.0)
+      (4): Linear(in_features=128, out_features=5, bias=True)
+    )
+    (proprio_normalizer): _PrivRunningMeanStd()
+  )
+)
+Critic Model: CbfCriticRMAModel(
+  (obs_normalizer): Identity()
+  (mlp): _SplitRMAMLP(
+    (0): _PrivEncoder(
+      (normalizer): _PrivRunningMeanStd()
+      (net): Sequential(
+        (0): Linear(in_features=14, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+        (2): Linear(in_features=64, out_features=64, bias=True)
+        (3): ELU(alpha=1.0)
+        (4): Linear(in_features=64, out_features=16, bias=True)
+        (5): ELU(alpha=1.0)
+      )
+    )
+    (1): _GridEncoder(
+      (conv): Sequential(
+        (0): Conv2d(2, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (1): ELU(alpha=1.0)
+        (2): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        (3): ELU(alpha=1.0)
+      )
+      (proj): Sequential(
+        (0): Linear(in_features=8192, out_features=64, bias=True)
+        (1): ELU(alpha=1.0)
+      )
+    )
+    (2): MLP(
+      (0): Linear(in_features=99, out_features=128, bias=True)
+      (1): ELU(alpha=1.0)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): ELU(alpha=1.0)
+      (4): Linear(in_features=128, out_features=1, bias=True)
+    )
+    (proprio_normalizer): _PrivRunningMeanStd()
+  )
+)
+[sweep] 10 configs × 1000 steps each
+[33m13:19:42 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:19:47 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:19:52 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:19:57 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 1/10] B0_α=0.50                         eps=107  coll=0.972  fall=0.019  stuck=0.000  v̄_xy=0.540  min_h̄=-0.072  close%=0.606  goal%=0.916
+[33m13:20:03 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:20:08 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:20:14 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:20:19 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 2/10] B0_α=2.00                         eps=108  coll=0.981  fall=0.000  stuck=0.009  v̄_xy=0.590  min_h̄=-0.085  close%=0.668  goal%=0.963
+[33m13:20:27 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:20:32 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:20:38 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:20:43 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 3/10] B0_α=3.00                         eps=112  coll=0.991  fall=0.009  stuck=0.000  v̄_xy=0.638  min_h̄=-0.091  close%=0.724  goal%=0.991
+[33m13:20:48 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:20:53 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:20:58 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:21:04 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 4/10] B1_α=0.50_φ=0.50                  eps=100  coll=0.970  fall=0.020  stuck=0.000  v̄_xy=0.506  min_h̄=-0.047  close%=0.522  goal%=0.890
+[33m13:21:09 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:21:14 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:21:20 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:21:25 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 5/10] B1_α=0.50_φ=2.00                  eps= 87  coll=0.874  fall=0.011  stuck=0.000  v̄_xy=0.516  min_h̄=-0.034  close%=0.324  goal%=0.839
+[33m13:21:32 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:21:37 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:21:42 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:21:47 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:21:52 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 6/10] B1_α=2.00_φ=0.50                  eps=109  coll=0.972  fall=0.009  stuck=0.000  v̄_xy=0.565  min_h̄=-0.063  close%=0.656  goal%=0.908
+[33m13:21:57 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:22:02 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:22:07 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:22:12 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 7/10] B1_α=2.00_φ=2.00                  eps=103  coll=0.971  fall=0.019  stuck=0.000  v̄_xy=0.574  min_h̄=-0.034  close%=0.434  goal%=0.874
+[33m13:22:20 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:22:25 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:22:30 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:22:36 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 8/10] B1_α=3.00_φ=0.50                  eps=114  coll=0.956  fall=0.026  stuck=0.000  v̄_xy=0.590  min_h̄=-0.063  close%=0.647  goal%=0.939
+[33m13:22:42 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:22:48 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:22:53 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:22:58 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[ 9/10] B1_α=3.00_φ=2.00                  eps=105  coll=0.971  fall=0.000  stuck=0.000  v̄_xy=0.568  min_h̄=-0.041  close%=0.545  goal%=0.886
+[33m13:23:05 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:23:11 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:23:16 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+[33m13:23:21 [articulation.py] WARNING: The function 'set_external_force_and_torque' will be deprecated in a future release. Please use 'permanent_wrench_composer.set_forces_and_torques' instead.[0m
+
+================================================================
+DONE at 2026-05-22 13:23:25
+
+Sync results back to Mac:
+  rsync -avz 'chrisliang@130.64.84.163:/home/chrisliang/Desktop/safety-go2/IsaacLab/logs/multiseed_corridor_strict_*' \
+    /Users/chrisliang8/Desktop/safety-go2/data_from_lab/
+================================================================

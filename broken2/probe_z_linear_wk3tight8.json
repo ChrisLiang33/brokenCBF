@@ -1,0 +1,126 @@
+{
+  "task": "Isaac-CBF-Go2-RMA-Layer3-PhiWin-TightCor-V8-v0",
+  "checkpoint": "logs/rsl_rl/cbf_go2_teacher_rma/2026-05-19_14-18-46/model_2499.pt",
+  "n_envs": 256,
+  "n_rollout_steps": 100,
+  "n_samples_total": 25600,
+  "n_train": 20480,
+  "n_test": 5120,
+  "z_dim": 16,
+  "priv_features": [
+    "friction",
+    "base_mass",
+    "base_height",
+    "force_x",
+    "force_y",
+    "force_z",
+    "torque_x",
+    "torque_y",
+    "torque_z",
+    "tracking_x",
+    "tracking_y",
+    "tracking_z",
+    "com_x",
+    "com_y",
+    "com_z",
+    "actuation_noise_sigma"
+  ],
+  "linear_probe": {
+    "friction": {
+      "r2_train": 0.06441037748824552,
+      "r2_test": 0.06891675456395774,
+      "mse_test": 0.060160788911536034,
+      "feature_std": 0.2541923522949219
+    },
+    "base_mass": {
+      "r2_train": 0.14896913615282392,
+      "r2_test": 0.14543719225514817,
+      "mse_test": 1.1798292768894694,
+      "feature_std": 1.1749992370605469
+    },
+    "base_height": {
+      "r2_train": 0.8590606444546914,
+      "r2_test": 0.8533351121557419,
+      "mse_test": 0.000662894335160521,
+      "feature_std": 0.06722937524318695
+    },
+    "force_x": {
+      "r2_train": 0.2490157908621955,
+      "r2_test": 0.2442130367190345,
+      "mse_test": 24.857525999338822,
+      "feature_std": 5.734945297241211
+    },
+    "force_y": {
+      "r2_train": 0.22665056678778983,
+      "r2_test": 0.22398154758962108,
+      "mse_test": 27.423359625199566,
+      "feature_std": 5.94462251663208
+    },
+    "force_z": {
+      "r2_train": 0.06722116409848711,
+      "r2_test": 0.05778902732532076,
+      "mse_test": 31.05702535285277,
+      "feature_std": 5.741241931915283
+    },
+    "torque_x": {
+      "r2_train": 0.35747289763862555,
+      "r2_test": 0.36706199669324735,
+      "mse_test": 0.8936615524067744,
+      "feature_std": 1.1882449388504028
+    },
+    "torque_y": {
+      "r2_train": 0.028980769026240027,
+      "r2_test": 0.024348158884358262,
+      "mse_test": 1.2089050539678123,
+      "feature_std": 1.113137125968933
+    },
+    "torque_z": {
+      "r2_train": 0.23355417073904394,
+      "r2_test": 0.23277185356367014,
+      "mse_test": 1.0196042780920553,
+      "feature_std": 1.1527988910675049
+    },
+    "tracking_x": {
+      "r2_train": 0.5028855771800576,
+      "r2_test": 0.5007487892951432,
+      "mse_test": 0.04256711832207957,
+      "feature_std": 0.29199644923210144
+    },
+    "tracking_y": {
+      "r2_train": 0.4688652136347484,
+      "r2_test": 0.4780890014567345,
+      "mse_test": 0.03141922244101216,
+      "feature_std": 0.24535758793354034
+    },
+    "tracking_z": {
+      "r2_train": 0.48754484719853075,
+      "r2_test": 0.4911744505632023,
+      "mse_test": 0.06995932773303429,
+      "feature_std": 0.37079882621765137
+    },
+    "com_x": {
+      "r2_train": 0.549882646153353,
+      "r2_test": 0.5360653167455744,
+      "mse_test": 0.03889188736280613,
+      "feature_std": 0.2895350158214569
+    },
+    "com_y": {
+      "r2_train": 0.5200383340740438,
+      "r2_test": 0.5205928374073863,
+      "mse_test": 0.027537630705352784,
+      "feature_std": 0.23966853320598602
+    },
+    "com_z": {
+      "r2_train": 0.5240112281937012,
+      "r2_test": 0.5247435922452969,
+      "mse_test": 0.06540970828550527,
+      "feature_std": 0.37098565697669983
+    },
+    "actuation_noise_sigma": {
+      "r2_train": 0.59942618795564,
+      "r2_test": 0.583920990024568,
+      "mse_test": 0.03431392426428996,
+      "feature_std": 0.2871754467487335
+    }
+  }
+}

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CBF Teacher — Architecture Diagrams</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 980px;
+    margin: 32px auto;
+    padding: 0 24px;
+    color: #1a1a1a;
+    line-height: 1.5;
+  }
+  h1 { border-bottom: 2px solid #333; padding-bottom: 8px; }
+  h2 { color: #333; margin-top: 40px; }
+  .diagram {
+    background: #fafafa;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 24px;
+    margin: 16px 0;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+  }
+  .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .box {
+    display: inline-block;
+    border: 2px solid #444;
+    border-radius: 4px;
+    padding: 8px 12px;
+    background: #fff;
+    text-align: center;
+    min-width: 100px;
+  }
+  .box.input { background: #fff5e6; border-color: #d97706; }
+  .box.encoder { background: #e6f3ff; border-color: #2563eb; }
+  .box.latent { background: #f0f9ff; border-color: #0284c7; }
+  .box.policy { background: #ecfccb; border-color: #65a30d; }
+  .box.action { background: #fee2e2; border-color: #dc2626; }
+  .box.lock { background: #fef3c7; border-color: #ca8a04; font-weight: bold; }
+  .arrow { font-size: 22px; color: #555; margin: 0 4px; }
+  .down-arrow { font-size: 22px; color: #555; padding-left: 50px; }
+  .note { color: #666; font-size: 13px; font-style: italic; padding-left: 8px; }
+  .channel-grid {
+    display: inline-grid;
+    grid-template-columns: repeat(8, 14px);
+    grid-template-rows: repeat(8, 14px);
+    gap: 1px;
+    background: #888;
+    padding: 2px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .channel-grid div {
+    background: #fff;
+  }
+  .channel-grid .filled { background: #d97706; }
+  .channel-grid .blocked { background: #444; }
+  .red { color: #dc2626; font-weight: bold; }
+  .green { color: #15803d; font-weight: bold; }
+  .gray { color: #888; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 6px 10px;
+    text-align: left;
+    font-size: 14px;
+  }
+  th { background: #f3f4f6; }
+  code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 13px; }
+  .bad { color: #dc2626; }
+  .good { color: #15803d; }
+</style>
+</head>
+<body>
+
+<h1>CBF Teacher — Architecture (V3, 2026-05-18)</h1>
+
+<p>The teacher is <strong>already</strong> using a CNN encoder on an occupancy grid. The grid is GT-derived (from privileged obstacle positions), not LiDAR-derived. Below is what's actually wired up.</p>
+
+<h2>1. Current Teacher Forward Pass</h2>
+
+<div class="diagram">
+
+<div class="row">
+  <span class="box input">Priv obs<br>33-D dyn</span>
+  <span class="note">friction · mass · base_height · force/torque · tracking_err_5step · base_ang_vel · COM · σ_act · δ_R</span>
+</div>
+<div class="down-arrow">↓</div>
+<div class="row">
+  <span class="box encoder">priv_encoder<br>MLP 33 → 64 → 64 → 8</span>
+</div>
+<div class="down-arrow">↓</div>
+<div class="row">
+  <span class="box latent">z_priv (8-D)</span>
+</div>
+
+<hr style="border: 0; border-top: 1px dashed #bbb; margin: 28px 0;">
+
+<div class="row">
+  <span class="box input">Occupancy grid<br>(2, 64, 64) = 8192-D</span>
+  <span class="channel-grid">
+    <div></div><div></div><div></div><div class="filled"></div><div class="filled"></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div class="filled"></div><div class="filled"></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div class="blocked"></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div class="blocked"></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div class="filled"></div><div class="filled"></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div class="filled"></div><div class="filled"></div><div></div><div></div><div></div>
+  </span>
+  <span class="note">ego-centric, body-aligned, 0.1m cells, 6.4m FOV. ch0: obstacle presence. ch1: obstacle radius.</span>
+</div>
+<div class="down-arrow">↓</div>
+<div class="row">
+  <span class="box encoder">grid_encoder<br>Conv2d(2→16,3×3,s=2) · ELU · Conv2d(16→32,3×3,s=2) · ELU · Flatten · Linear(8192→64) · ELU</span>
+</div>
+<div class="down-arrow">↓</div>
+<div class="row">
+  <span class="box latent">z_grid (64-D)</span>
+</div>
+
+<hr style="border: 0; border-top: 1px dashed #bbb; margin: 28px 0;">
+
+<div class="row">
+  <span class="box input">proprio<br>(unchanged)</span>
+  <span class="note">passes through raw — RMA convention for instantaneous state info</span>
+</div>
+
+<hr style="border: 0; border-top: 1px dashed #bbb; margin: 28px 0;">
+
+<div class="row">
+  <span class="box latent">z_priv (8)</span>
+  <span class="arrow">+</span>
+  <span class="box latent">z_grid (64)</span>
+  <span class="arrow">+</span>
+  <span class="box latent">proprio</span>
+</div>
+<div class="down-arrow">↓</div>
+<div class="row">
+  <span class="box policy">π_teacher MLP</span>
+</div>
+<div class="down-arrow">↓</div>
+<div class="row">
+  <span class="box action">action 5-D<br>(α, φ, a, b, c)</span>
+</div>
+
+</div>
+
+<h2>2. What you might have been picturing vs reality</h2>
+
+<table>
+  <tr><th>Your mental model</th><th>Actual code</th></tr>
+  <tr><td>Teacher sees GT obstacle positions as a list of (x, y) pairs</td><td>GT obstacle positions are <strong>rasterized into a 64×64 ego-centric occupancy grid</strong> before the teacher sees them. The teacher never sees raw position lists.</td></tr>
+  <tr><td>No CNN used for the teacher</td><td>Two stride-2 conv layers run on the grid. <code>z_grid</code> is 64-D — bigger than <code>z_priv</code> (8-D), so the grid path actually carries more capacity.</td></tr>
+  <tr><td>LiDAR data feeds the teacher</td><td>LiDAR does <strong>not</strong> feed the teacher. The teacher uses a GT-derived occupancy grid. Student stage (Phase 2, not started yet) is where LiDAR enters.</td></tr>
+</table>
+
+<p>So the "CNN on occupancy grid" piece is already in place. The teacher already has spatial reasoning capacity.</p>
+
+<h2>3. Why φ still doesn't use the grid features (within episode)</h2>
+
+<p>The architecture <em>could</em> drive φ from grid features — z_grid feeds π_teacher which outputs all 5 CBF params including φ. But the <strong>per-episode φ lock</strong> in <code>_cbf_filter</code> blocks it:</p>
+
+<div class="diagram">
+
+<div class="row">
+  <span class="box latent">z_grid (64-D)<br>varies each step</span>
+  <span class="arrow">→</span>
+  <span class="box policy">π_teacher</span>
+  <span class="arrow">→</span>
+  <span class="box action">policy φ_t<br>(varies)</span>
+</div>
+<div class="down-arrow">↓</div>
+<div class="row">
+  <span class="box lock">PER-EPISODE LOCK<br>captures φ at step 0, ignores all later φ_t</span>
+</div>
+<div class="down-arrow">↓</div>
+<div class="row">
+  <span class="box action">CBF actual φ<br><span class="red">= φ_step_0 (constant)</span></span>
+</div>
+
+</div>
+
+<p>So even though z_grid (and hence the policy's φ output) is changing every step as the robot moves through the scene, the locked CBF discards those changes. The grid CNN's spatial features <span class="bad">never get to influence φ within an episode.</span></p>
+
+<h2>4. What V4 (windowed lock) changes</h2>
+
+<div class="diagram">
+
+<div class="row">
+  <span class="box latent">z_grid<br>varies each step</span>
+  <span class="arrow">→</span>
+  <span class="box policy">π_teacher</span>
+  <span class="arrow">→</span>
+  <span class="box action">policy φ_t</span>
+</div>
+<div class="down-arrow">↓</div>
+<div class="row">
+  <span class="box lock" style="background: #d1fae5; border-color: #15803d;">WINDOWED LOCK @ 5s<br>refreshes every 250 steps within episode</span>
+</div>
+<div class="down-arrow">↓</div>
+<div class="row">
+  <span class="box action">CBF actual φ<br><span class="green">= step-0 φ (250 steps), then refresh, then 250 steps of new φ, ...</span></span>
+</div>
+
+<p style="margin-top: 16px; font-style: italic;">Robot traverses open → corridor → open within one episode. z_grid sees this. Policy's φ_t output reflects it. With windowed lock, the CBF gets ~4 different φ values per 20s episode — enough to switch from "open: low φ" to "corridor: higher φ" mid-episode.</p>
+
+</div>
+
+<h2>5. On switching the teacher to LiDAR (your suggested fix)</h2>
+
+<p>You asked if we should switch the teacher off GT positions and onto LiDAR. The honest answer:</p>
+
+<ul>
+  <li><strong>RMA's design intent</strong>: teacher uses privileged info (because it's available in sim and gives faster/cleaner training), student distills that knowledge using LiDAR (because that's what's available at deploy). If teacher uses LiDAR too, we lose the privileged advantage and the teacher trains slower / worse.</li>
+  <li><strong>What we'd gain</strong>: smaller teacher-student gap (since both see the same input distribution). Helpful for distillation.</li>
+  <li><strong>What we'd lose</strong>: teacher convergence speed + cleanliness of the latent z_priv. Teacher would have to do perception inference too.</li>
+  <li><strong>Practical recommendation</strong>: keep teacher on GT-derived grid (current). The CNN is already there. The grid features are already feeding the policy. The bottleneck for φ adaptation isn't perception — it's the lock.</li>
+</ul>
+
+<h2>6. The actual fix path</h2>
+
+<ol>
+  <li><strong>V4 = unlock φ to use the grid features it already has access to.</strong> Windowed lock @ 5s. Single config change from V3.</li>
+  <li>If V4 shows within-episode φ tracking obstacle proximity (Pearson(φ_t, h_t) strongly negative within episode), the grid → φ pipeline is working. Step 2 is on track.</li>
+  <li>If V4 doesn't show within-episode adaptation despite the unlock, the bottleneck is somewhere else (reward landscape, gradient noise, or grid encoder capacity).</li>
+</ol>
+
+<p><em>Generated 2026-05-18 for V3 → V4 design discussion.</em></p>
+
+</body>
+</html>

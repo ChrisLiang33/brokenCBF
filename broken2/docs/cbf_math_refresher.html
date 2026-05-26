@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CBF Math Refresher</title>
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  max-width: 920px;
+  margin: 2em auto;
+  padding: 0 1.5em 4em;
+  line-height: 1.55;
+  color: #222;
+  background: #fdfdfd;
+}
+h1 { border-bottom: 2px solid #333; padding-bottom: 6px; }
+h2 { color: #1a4d8c; margin-top: 2.5em; padding-bottom: 4px; border-bottom: 1px dotted #aaa; }
+.panel {
+  background: #f4f7fb;
+  border-left: 4px solid #1a4d8c;
+  padding: 0.7em 1em;
+  margin: 1em 0;
+}
+.math {
+  background: #fff8e1;
+  padding: 0.7em 1em;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  border: 1px solid #d4a800;
+  border-radius: 4px;
+  white-space: pre;
+  overflow-x: auto;
+  font-size: 14px;
+}
+code { background: #eee; padding: 1px 5px; border-radius: 3px; font-family: "SF Mono", Menlo, Consolas, monospace; }
+.svg-wrap { display: flex; justify-content: center; margin: 1em 0; }
+svg { background: white; border: 1px solid #999; border-radius: 4px; }
+.controls { display: flex; flex-wrap: wrap; gap: 1.5em; margin: 1em 0; padding: 1em; background: #f0f0f5; border-radius: 6px; }
+.control { display: flex; flex-direction: column; gap: 4px; }
+.control label { font-family: monospace; font-size: 13px; }
+input[type=range] { width: 240px; }
+.readout {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  padding: 0.8em 1em;
+  background: #eef;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.idle { color: #2a8c2a; font-weight: bold; }
+.active { color: #c44; font-weight: bold; }
+.tag { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-family: monospace; margin-right: 4px; }
+.tag.q { background: #ffe4a0; }
+</style>
+</head>
+<body>
+
+<h1>CBF Math Refresher</h1>
+<p>One page. Each section answers one of your questions. Section §6 at the bottom is interactive — drag sliders.</p>
+
+<!-- ───────────────────────────────────────── -->
+<h2>§1 — What ‖v‖ means (norm / length)</h2>
+<div class="panel">
+<p><span class="tag q">Q</span> "what does ‖·‖ mean? what is linalg.norm?"</p>
+<p>‖v‖ is just the LENGTH of vector v. The double-bar is math notation; <code>np.linalg.norm(v)</code> is the Python function. For a 2D vector:</p>
+<div class="math">v = (vx, vy)
+‖v‖ = sqrt(vx² + vy²)         (Pythagoras)</div>
+<p>Example below: v = (3, 4) → ‖v‖ = √(9+16) = 5.</p>
+</div>
+
+<div class="svg-wrap">
+<svg width="380" height="240" viewBox="0 0 380 240">
+  <defs>
+    <marker id="arrR1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#d44"/></marker>
+  </defs>
+  <line x1="40" y1="200" x2="360" y2="200" stroke="#999" stroke-width="1"/>
+  <line x1="40" y1="200" x2="40" y2="20" stroke="#999" stroke-width="1"/>
+  <text x="350" y="218" font-family="monospace" font-size="11" fill="#666">x</text>
+  <text x="22" y="30" font-family="monospace" font-size="11" fill="#666">y</text>
+
+  <!-- vector v=(3,4) → scale 30, endpoint at (40+90, 200-120) = (130, 80) -->
+  <line x1="40" y1="200" x2="130" y2="80" stroke="#d44" stroke-width="3" marker-end="url(#arrR1)"/>
+
+  <!-- decomp -->
+  <line x1="40" y1="200" x2="130" y2="200" stroke="#88f" stroke-width="2" stroke-dasharray="5,4"/>
+  <line x1="130" y1="200" x2="130" y2="80" stroke="#88f" stroke-width="2" stroke-dasharray="5,4"/>
+
+  <text x="65" y="218" font-family="monospace" font-size="13">vx = 3</text>
+  <text x="138" y="145" font-family="monospace" font-size="13">vy = 4</text>
+  <text x="60" y="130" font-family="monospace" font-size="15" fill="#d44" font-weight="bold">‖v‖ = 5</text>
+</svg>
+</div>
+
+<!-- ───────────────────────────────────────── -->
+<h2>§2 — Identity matrix I₂</h2>
+<div class="panel">
+<p><span class="tag q">Q</span> "what is the g(x) identity matrix, what does it look like?"</p>
+<p>It's a 2×2 matrix that does NOTHING when you multiply by it — a math passthrough.</p>
+<div class="math">I₂ = [ 1   0 ]
+     [ 0   1 ]
+
+[ 1   0 ] [ vx ]     [ vx ]
+[ 0   1 ] [ vy ]  =  [ vy ]      ← same vector back</div>
+<p>Python: <code>np.eye(2) @ v == v</code> for any v.</p>
+<p>So when we say <strong>g(x) = I₂</strong> in the dynamics ẋ = f(x) + g(x)·u, we're saying "your input <em>is</em> the velocity, no transformation." That's true for the holonomic point-mass model used in the CBF math (the locomotion network handles the messy joint-level dynamics separately).</p>
+<p>If your robot were a car (input = steering angle, not velocity), g(x) would be a non-trivial matrix encoding "how does steering map to position rate?" — and L_g h would NOT equal ∇h.</p>
+</div>
+
+<!-- ───────────────────────────────────────── -->
+<h2>§3 — Dot product a · b</h2>
+<div class="panel">
+<p>Two vectors in, one number out. The ONLY thing you really need to remember is the SIGN:</p>
+<div class="math">a · b  =  ax·bx + ay·by   =   ‖a‖·‖b‖·cos(θ)
+
+  positive  →  a, b roughly same way   (angle &lt; 90°)
+  zero      →  perpendicular           (angle = 90°)
+  negative  →  roughly opposite        (angle &gt; 90°)</div>
+</div>
+
+<div class="svg-wrap">
+<svg width="700" height="180" viewBox="0 0 700 180">
+  <defs>
+    <marker id="aR" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#d44"/></marker>
+    <marker id="aB" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#48d"/></marker>
+  </defs>
+
+  <!-- panel 1: positive -->
+  <g transform="translate(110, 90)">
+    <line x1="0" y1="0" x2="80" y2="-30" stroke="#d44" stroke-width="3" marker-end="url(#aR)"/>
+    <line x1="0" y1="0" x2="80" y2="0" stroke="#48d" stroke-width="3" marker-end="url(#aB)"/>
+    <text x="50" y="-40" font-family="monospace" font-size="12" fill="#d44">a</text>
+    <text x="50" y="20" font-family="monospace" font-size="12" fill="#48d">b</text>
+    <text x="-20" y="55" font-family="monospace" font-size="14" fill="#2a8c2a">a · b > 0</text>
+  </g>
+
+  <!-- panel 2: zero -->
+  <g transform="translate(340, 90)">
+    <line x1="0" y1="0" x2="0" y2="-70" stroke="#d44" stroke-width="3" marker-end="url(#aR)"/>
+    <line x1="0" y1="0" x2="80" y2="0" stroke="#48d" stroke-width="3" marker-end="url(#aB)"/>
+    <text x="-15" y="-50" font-family="monospace" font-size="12" fill="#d44">a</text>
+    <text x="50" y="20" font-family="monospace" font-size="12" fill="#48d">b</text>
+    <text x="-20" y="55" font-family="monospace" font-size="14" fill="#999">a · b = 0</text>
+  </g>
+
+  <!-- panel 3: negative -->
+  <g transform="translate(560, 90)">
+    <line x1="0" y1="0" x2="-65" y2="-30" stroke="#d44" stroke-width="3" marker-end="url(#aR)"/>
+    <line x1="0" y1="0" x2="80" y2="0" stroke="#48d" stroke-width="3" marker-end="url(#aB)"/>
+    <text x="-65" y="-40" font-family="monospace" font-size="12" fill="#d44">a</text>
+    <text x="50" y="20" font-family="monospace" font-size="12" fill="#48d">b</text>
+    <text x="-20" y="55" font-family="monospace" font-size="14" fill="#c44">a · b &lt; 0</text>
+  </g>
+</svg>
+</div>
+
+<!-- ───────────────────────────────────────── -->
+<h2>§4 — h(x): the safety scalar</h2>
+<div class="panel">
+<p>h(x) is the safety function. For one circular obstacle:</p>
+<div class="math">h(p_rob)  =  ‖p_rob − p_obs‖  −  (R_rob + R_obs)
+            └─── distance ───┘    └── combined radius ──┘
+
+  h > 0  →  safe (gap exists)
+  h = 0  →  touching boundary
+  h < 0  →  collision (penetrating)</div>
+<p>Your real <code>_compute_h</code> blends multiple obstacles via exponential smoothing, but the idea is the same: bigger h = farther from danger.</p>
+</div>
+
+<div class="svg-wrap">
+<svg width="500" height="220" viewBox="0 0 500 220">
+  <circle cx="120" cy="110" r="40" fill="#fcc" stroke="#a44" stroke-width="2"/>
+  <circle cx="320" cy="110" r="20" fill="#cef" stroke="#48d" stroke-width="2"/>
+  <text x="105" y="115" font-size="13" font-family="monospace">obs</text>
+  <text x="312" y="115" font-size="12" font-family="monospace">rob</text>
+
+  <line x1="160" y1="110" x2="300" y2="110" stroke="#2a8c2a" stroke-width="2"/>
+  <text x="195" y="100" font-size="14" font-family="monospace" fill="#2a8c2a" font-weight="bold">h = the gap</text>
+
+  <line x1="120" y1="155" x2="160" y2="155" stroke="#a44" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="118" y="172" font-size="11" font-family="monospace" fill="#a44">R_obs</text>
+
+  <line x1="300" y1="155" x2="320" y2="155" stroke="#48d" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="290" y="172" font-size="11" font-family="monospace" fill="#48d">R_rob</text>
+
+  <text x="100" y="205" font-size="13" font-family="monospace">‖p_rob − p_obs‖ − (R_rob + R_obs) = h</text>
+</svg>
+</div>
+
+<!-- ───────────────────────────────────────── -->
+<h2>§5 — Why L_g h ends up being (p_rob − p_obs) / ‖p_rob − p_obs‖</h2>
+<div class="panel">
+<p><span class="tag q">Q</span> "i thought L_g h = ∂h/∂x · g(x)"</p>
+<p>Yes — and after you DO that math, it simplifies:</p>
+<div class="math">h          =  ‖p_rob − p_obs‖ − R
+let δ      =  p_rob − p_obs            (the "delta" vector)
+h          =  ‖δ‖ − R                  (R is constant, drops out of gradient)
+
+∇h = ∂h/∂p_rob = ∂‖δ‖/∂p_rob
+
+The calculus identity for "gradient of a vector's length":
+  ∂‖δ‖/∂δ = δ / ‖δ‖           (this is just an unit vector along δ)
+  ∂δ/∂p_rob = I₂              (since δ = p_rob − p_obs)
+
+Chain rule:
+  ∇h  =  (δ / ‖δ‖) · I₂  =  δ / ‖δ‖
+       =  (p_rob − p_obs) / ‖p_rob − p_obs‖
+
+Then:
+  L_g h  =  ∇h · g(x)  =  (δ/‖δ‖) · I₂  =  δ/‖δ‖
+
+      ← the identity matrix passes ∇h through unchanged.</div>
+<p>So L_g h is a UNIT VECTOR (length 1) pointing FROM the obstacle TO the robot — the "escape direction." The reason it equals ∇h here is purely because g(x) = I₂.</p>
+</div>
+
+<div class="svg-wrap">
+<svg width="540" height="220" viewBox="0 0 540 220">
+  <defs>
+    <marker id="arG" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#2a8c2a"/></marker>
+  </defs>
+
+  <circle cx="120" cy="110" r="40" fill="#fcc" stroke="#a44" stroke-width="2"/>
+  <text x="105" y="115" font-size="13" font-family="monospace">obs</text>
+
+  <circle cx="380" cy="110" r="14" fill="#cef" stroke="#48d" stroke-width="2"/>
+  <text x="372" y="115" font-size="11" font-family="monospace">rob</text>
+
+  <line x1="120" y1="110" x2="380" y2="110" stroke="#888" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="200" y="100" font-size="13" font-family="monospace" fill="#888">δ = p_rob − p_obs</text>
+
+  <line x1="380" y1="110" x2="475" y2="110" stroke="#2a8c2a" stroke-width="3" marker-end="url(#arG)"/>
+  <text x="395" y="98" font-size="14" font-family="monospace" fill="#2a8c2a" font-weight="bold">L_g h</text>
+  <text x="395" y="135" font-size="11" font-family="monospace" fill="#2a8c2a">(unit length, points away)</text>
+</svg>
+</div>
+
+<!-- ───────────────────────────────────────── -->
+<h2>§6 — Putting it all together: drag the sliders</h2>
+<div class="panel">
+<p>Now feel it. Slack tells you whether the teleop command u_des already satisfies the CBF constraint:</p>
+<div class="math">slack = L_g h · u_des  +  α · h
+        ─────────────     ─────
+        teleop term:       margin term:
+        is teleop          how much safety
+        heading            already exists
+        away?              (h scaled by α)
+
+slack ≥ 0  →  QP IDLE   →  u_safe = u_des  →  ∂u_safe/∂α = 0
+slack < 0  →  QP ACTIVE →  u_safe ≠ u_des  →  α gradient flows</div>
+<p>Move the robot, rotate u_des, change α. Watch slack. The "QP ACTIVE" zone is where any α-learning can happen.</p>
+</div>
+
+<div class="controls">
+  <div class="control">
+    <label>Robot x position: <span id="rxLabel">300</span></label>
+    <input type="range" id="rx" min="170" max="540" value="300">
+  </div>
+  <div class="control">
+    <label>u_des angle (°): <span id="uaLabel">180</span></label>
+    <input type="range" id="ua" min="-180" max="180" value="180">
+  </div>
+  <div class="control">
+    <label>α: <span id="aLabel">1.0</span></label>
+    <input type="range" id="a" min="1" max="50" value="10">
+  </div>
+</div>
+
+<div class="svg-wrap">
+<svg width="700" height="280" id="liveSvg" viewBox="0 0 700 280"></svg>
+</div>
+
+<div class="readout" id="readout"></div>
+
+<script>
+const rxSlider = document.getElementById('rx');
+const uaSlider = document.getElementById('ua');
+const aSlider  = document.getElementById('a');
+const svg      = document.getElementById('liveSvg');
+const readout  = document.getElementById('readout');
+const rxLabel  = document.getElementById('rxLabel');
+const uaLabel  = document.getElementById('uaLabel');
+const aLabel   = document.getElementById('aLabel');
+
+const obsX = 150, obsY = 140, obsR = 50;
+const robR = 16;
+// 1 m on screen = 50 px (approximate; tune via dist scale)
+const SCALE = 50;
+
+function update() {
+  const rx     = parseFloat(rxSlider.value);
+  const uaDeg  = parseFloat(uaSlider.value);
+  const alpha  = parseFloat(aSlider.value) / 10;
+  rxLabel.textContent = rx;
+  uaLabel.textContent = uaDeg;
+  aLabel.textContent  = alpha.toFixed(1);
+
+  const ry   = obsY;
+  const dx_px = rx - obsX, dy_px = ry - obsY;
+  const dist_px = Math.hypot(dx_px, dy_px);
+  // Convert to "physical" meters for h
+  const dist_m = dist_px / SCALE;
+  const h = dist_m - (obsR + robR) / SCALE;
+
+  // L_g h unit vector (in the screen frame, but unitless)
+  const lghX = dx_px / dist_px;
+  const lghY = dy_px / dist_px;
+
+  // u_des is a unit vector in the angle direction
+  const uaRad = uaDeg * Math.PI / 180;
+  const ux = Math.cos(uaRad);
+  const uy = Math.sin(uaRad);
+
+  const dot   = lghX * ux + lghY * uy;
+  const slack = dot + alpha * h;
+  const idle  = slack >= 0;
+
+  // Draw
+  svg.innerHTML = `
+    <defs>
+      <marker id="aR" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#d44"/></marker>
+      <marker id="aG" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#2a8c2a"/></marker>
+    </defs>
+    <rect x="0" y="0" width="700" height="280" fill="${idle ? '#f0fbf0' : '#fdf0f0'}"/>
+    <text x="540" y="30" font-family="monospace" font-size="16" font-weight="bold"
+          fill="${idle ? '#2a8c2a' : '#c44'}">
+      ${idle ? 'QP IDLE' : 'QP ACTIVE'}
+    </text>
+    <circle cx="${obsX}" cy="${obsY}" r="${obsR}" fill="#fcc" stroke="#a44" stroke-width="2"/>
+    <text x="${obsX-12}" y="${obsY+5}" font-family="monospace" font-size="13">obs</text>
+    <circle cx="${rx}" cy="${ry}" r="${robR}" fill="#cef" stroke="#48d" stroke-width="2"/>
+    <text x="${rx-12}" y="${ry+5}" font-family="monospace" font-size="11">rob</text>
+
+    <!-- L_g h arrow (green), length 50 px at robot -->
+    <line x1="${rx}" y1="${ry}" x2="${rx + lghX*50}" y2="${ry + lghY*50}"
+          stroke="#2a8c2a" stroke-width="3" marker-end="url(#aG)"/>
+    <text x="${rx + lghX*55 + 5}" y="${ry + lghY*55 + 5}" font-family="monospace" font-size="13"
+          fill="#2a8c2a" font-weight="bold">L_g h</text>
+
+    <!-- u_des arrow (red), length 70 px at robot -->
+    <line x1="${rx}" y1="${ry}" x2="${rx + ux*70}" y2="${ry + uy*70}"
+          stroke="#d44" stroke-width="3" marker-end="url(#aR)"/>
+    <text x="${rx + ux*78}" y="${ry + uy*78 + 5}" font-family="monospace" font-size="13"
+          fill="#d44" font-weight="bold">u_des</text>
+  `;
+
+  const status = idle
+    ? '<span class="idle">QP IDLE</span> &nbsp;→&nbsp; u_safe = u_des &nbsp;→&nbsp; ∂u_safe/∂α = 0 &nbsp;<em>(no α-gradient!)</em>'
+    : '<span class="active">QP ACTIVE</span> &nbsp;→&nbsp; u_safe ≠ u_des &nbsp;→&nbsp; α gradient flows';
+
+  readout.innerHTML = `
+    h = ${h.toFixed(2)} m &nbsp; (clearance, larger = safer)<br>
+    L_g h = (${lghX.toFixed(2)}, ${lghY.toFixed(2)}) &nbsp; <em>(unit vector)</em><br>
+    u_des = (${ux.toFixed(2)}, ${uy.toFixed(2)}) &nbsp; <em>(unit vector)</em><br>
+    L_g h · u_des = ${dot.toFixed(2)} &nbsp; <em>(planner term: positive = teleop heading away)</em><br>
+    α · h = ${(alpha * h).toFixed(2)} &nbsp; <em>(margin term: bigger α and bigger h both help)</em><br>
+    <strong>slack = ${slack.toFixed(2)}</strong> &nbsp;&nbsp; ${status}
+  `;
+}
+
+[rxSlider, uaSlider, aSlider].forEach(s => s.addEventListener('input', update));
+update();
+</script>
+
+<h2>What to play with (§6)</h2>
+<div class="panel">
+<ul>
+  <li><strong>Push the robot far from obstacle (rx → max).</strong> h gets large, α·h dominates, slack stays positive regardless of u_des direction → QP IDLE everywhere → α has no gradient. <em>This is most of your training.</em></li>
+  <li><strong>Drop α to 0.1.</strong> The margin term shrinks. Now u_des direction starts to matter. Rotate u_des — you can flip QP between idle and active.</li>
+  <li><strong>Crank α to 5.0 with a tight robot position.</strong> Even pointing u_des straight at the obstacle, slack stays positive. α "shielded" the constraint into uselessness.</li>
+  <li><strong>Sweet spot for learning</strong>: small h (close obstacle), small-to-mid α, u_des roughly hostile. That's where the QP fires and α-gradient flows. Curriculum implication: spawn closer to obstacles.</li>
+</ul>
+</div>
+
+<!-- ───────────────────────────────────────── -->
+<h2>§7 — The CBF as a projection (control space)</h2>
+<div class="panel">
+<p>So far we've been in <em>physical space</em> (where the robot is). Now zoom into <em>control space</em> — the 2D plane where u_des and u_safe live (axes = u_x and u_y, the velocity components). This is where you actually see the CBF filter <em>do</em> its job.</p>
+
+<div class="math">Constraint:        L_g h · u  ≥  rhs
+where rhs = − α·h                           (Layer 1, your current setup)
+          = − α(h − c) + φ‖L_g h‖² + a      (Layer 4, full robust CBF)
+
+In u-space this is a STRAIGHT LINE perpendicular to L_g h.
+It cuts u-space into two halves:
+
+  ALLOWED half-plane (green) :  L_g h · u  ≥  rhs   →  u_safe = u_des       (QP idle)
+  FORBIDDEN half-plane (red) :  L_g h · u  &lt;  rhs   →  u_safe = closest    (QP active)
+                                                       point on the line</div>
+<p>The "closest point" rule is just orthogonal projection: drop a perpendicular from u_des onto the boundary line. The projection direction is along <code>−L_g h</code> (the only direction that changes how much of u points along L_g h). In your code:</p>
+<div class="math">u_safe = u_des − L_g h · (slack / ‖L_g h‖²)       where slack = L_g h · u_des − rhs</div>
+<p>For this demo I fixed <strong>L_g h = (1, 0)</strong> (pointing in +u_x direction) so the constraint line is vertical at u_x = rhs. Drag the sliders below — watch the line move as α and h change, and watch u_safe snap onto the line whenever u_des crosses into the red zone.</p>
+</div>
+
+<div class="controls">
+  <div class="control">
+    <label>α: <span id="qp_aL">1.0</span></label>
+    <input type="range" id="qp_a" min="1" max="50" value="10">
+  </div>
+  <div class="control">
+    <label>h (clearance, m): <span id="qp_hL">0.5</span></label>
+    <input type="range" id="qp_h" min="-5" max="20" value="5">
+  </div>
+  <div class="control">
+    <label>u_des angle (°): <span id="qp_uaL">135</span></label>
+    <input type="range" id="qp_ua" min="-180" max="180" value="135">
+  </div>
+  <div class="control">
+    <label>u_des magnitude: <span id="qp_umL">1.5</span></label>
+    <input type="range" id="qp_um" min="2" max="20" value="15">
+  </div>
+</div>
+
+<div class="svg-wrap">
+<svg width="640" height="400" id="qpSvg" viewBox="0 0 640 400"></svg>
+</div>
+
+<div class="readout" id="qpReadout"></div>
+
+<h2>What to play with (§7)</h2>
+<div class="panel">
+<ul>
+  <li><strong>Increase α.</strong> The constraint line slides LEFT (rhs gets more negative). The allowed green zone grows. More u_des values are accepted as-is — fewer projections happen. <em>This is the "α-shield" effect: bigger α makes the QP idle more often.</em></li>
+  <li><strong>Decrease h toward 0.</strong> The line slides toward u_x = 0 — the constraint hugs the origin. Even small u_des with negative u_x gets projected. <em>Close to obstacle = strict CBF.</em></li>
+  <li><strong>Make h negative (collision).</strong> Line jumps to the right of origin. Now even u_des = 0 is forbidden — the CBF FORCES motion away from obstacle. <em>This is the recovery behavior the math guarantees.</em></li>
+  <li><strong>Rotate u_des by 180°.</strong> When u_des points along +L_g h (positive u_x), it's deep in the green zone and unaffected. When it points along −L_g h (toward obstacle), it gets projected. <em>The CBF only filters the dangerous component.</em></li>
+  <li><strong>Notice u_safe's y-component never changes.</strong> Only the u_x component (along L_g h) gets clipped. Tangential motion is preserved. <em>This is why you can still walk past obstacles — the CBF doesn't kill perpendicular motion.</em></li>
+  <li><strong>Connect to gradient.</strong> When the dot is in the green zone, sliding α doesn't move u_safe at all. <em>This is the ∂u_safe/∂α = 0 fact you derived earlier, made visual.</em></li>
+</ul>
+</div>
+
+<h2>§8 — How φ, a, c each shape the constraint (full robust CBF)</h2>
+<div class="panel">
+<p>Layer 1 only uses α. The full 4-param robust CBF has three more terms, each shifting the constraint line for a different reason:</p>
+<div class="math">rhs = − α(h − c) + φ‖L_g h‖² + a
+
+  α  (class-K decay)       : bigger α → line shifts LEFT  → MORE permissive
+  c  (boundary correction) : bigger c → line shifts RIGHT → LESS permissive
+                             (treats h as if smaller — extra safety buffer)
+  φ  (actuation noise)     : bigger φ → line shifts RIGHT → LESS permissive
+                             (extra margin against unmodeled dynamics)
+  a  (measurement bias)    : bigger a → line shifts RIGHT → LESS permissive
+                             (extra margin against perception bias)</div>
+<p>So three of the four parameters are "conservatism dials" (φ, a, c) — each one says "I think the world is worse than h reports, give me more margin." Only α trades off how aggressive the policy is. That's why each term in your layer-by-layer plan has its own paired DR axis: φ should adapt to actuation noise, a to perception bias, c to radius error. Without that DR, those slots have nothing to learn against.</p>
+</div>
+
+<script>
+// ── §7 interactive u-space view ──
+const qp_a = document.getElementById('qp_a');
+const qp_h = document.getElementById('qp_h');
+const qp_ua = document.getElementById('qp_ua');
+const qp_um = document.getElementById('qp_um');
+const qp_aL = document.getElementById('qp_aL');
+const qp_hL = document.getElementById('qp_hL');
+const qp_uaL = document.getElementById('qp_uaL');
+const qp_umL = document.getElementById('qp_umL');
+const qpSvg = document.getElementById('qpSvg');
+const qpReadout = document.getElementById('qpReadout');
+
+const QP_CX = 320, QP_CY = 200, QP_SCALE = 80;  // 80 px per m/s
+
+function qpUpdate() {
+  const alpha = parseFloat(qp_a.value) / 10;
+  const h     = parseFloat(qp_h.value) / 10;
+  const uaDeg = parseFloat(qp_ua.value);
+  const um    = parseFloat(qp_um.value) / 10;
+  qp_aL.textContent  = alpha.toFixed(1);
+  qp_hL.textContent  = h.toFixed(1);
+  qp_uaL.textContent = uaDeg;
+  qp_umL.textContent = um.toFixed(1);
+
+  // Fixed L_g h = (1, 0) for this demo. rhs = -α·h.
+  const rhs = -alpha * h;
+
+  const uaRad = uaDeg * Math.PI / 180;
+  const ux = um * Math.cos(uaRad);
+  const uy = um * Math.sin(uaRad);
+
+  const slack = ux - rhs;
+  const idle = slack >= 0;
+
+  // u_safe: when active, project onto u_x = rhs line; y unchanged
+  const usx = idle ? ux : rhs;
+  const usy = uy;
+
+  const sx = (x) => QP_CX + x * QP_SCALE;
+  const sy = (y) => QP_CY - y * QP_SCALE;
+  const lineX = sx(rhs);
+  const lineXClamped = Math.max(0, Math.min(640, lineX));
+
+  qpSvg.innerHTML = `
+    <defs>
+      <marker id="qpR" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#d44"/></marker>
+      <marker id="qpG" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#2a8c2a"/></marker>
+      <marker id="qpK" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#222"/></marker>
+    </defs>
+
+    <!-- Half-plane shading -->
+    <rect x="0" y="0" width="${lineXClamped}" height="400" fill="#fde8e8"/>
+    <rect x="${lineXClamped}" y="0" width="${640 - lineXClamped}" height="400" fill="#eaf7ea"/>
+
+    <!-- Half-plane labels -->
+    <text x="${lineXClamped/2 - 60}" y="60" font-family="monospace" font-size="13" fill="#a44" font-weight="bold">FORBIDDEN</text>
+    <text x="${lineXClamped/2 - 90}" y="78" font-family="monospace" font-size="11" fill="#a44">L_g h · u &lt; rhs</text>
+    <text x="${lineXClamped + 30}" y="60" font-family="monospace" font-size="13" fill="#2a8c2a" font-weight="bold">ALLOWED</text>
+    <text x="${lineXClamped + 30}" y="78" font-family="monospace" font-size="11" fill="#2a8c2a">L_g h · u ≥ rhs</text>
+
+    <!-- Constraint line -->
+    <line x1="${lineX}" y1="0" x2="${lineX}" y2="400" stroke="#a44" stroke-width="2" stroke-dasharray="6,4"/>
+    <text x="${lineX + 6}" y="395" font-family="monospace" font-size="11" fill="#a44">u_x = rhs = ${rhs.toFixed(2)}</text>
+
+    <!-- Axes -->
+    <line x1="0" y1="${QP_CY}" x2="640" y2="${QP_CY}" stroke="#bbb" stroke-width="1"/>
+    <line x1="${QP_CX}" y1="0" x2="${QP_CX}" y2="400" stroke="#bbb" stroke-width="1"/>
+    <text x="620" y="${QP_CY - 5}" font-family="monospace" font-size="11" fill="#666">u_x</text>
+    <text x="${QP_CX + 5}" y="15" font-family="monospace" font-size="11" fill="#666">u_y</text>
+
+    <!-- L_g h direction marker (small, at origin) -->
+    <line x1="${QP_CX}" y1="${QP_CY}" x2="${QP_CX + 50}" y2="${QP_CY}" stroke="#222" stroke-width="2" marker-end="url(#qpK)"/>
+    <text x="${QP_CX + 55}" y="${QP_CY + 16}" font-family="monospace" font-size="11">L_g h direction</text>
+
+    <!-- u_des arrow -->
+    <line x1="${QP_CX}" y1="${QP_CY}" x2="${sx(ux)}" y2="${sy(uy)}" stroke="#d44" stroke-width="3" marker-end="url(#qpR)"/>
+    <circle cx="${sx(ux)}" cy="${sy(uy)}" r="4" fill="#d44"/>
+    <text x="${sx(ux) + 8}" y="${sy(uy) - 4}" font-family="monospace" font-size="13" fill="#d44" font-weight="bold">u_des</text>
+
+    <!-- u_safe arrow (only different from u_des when active) -->
+    ${!idle ? `
+      <line x1="${QP_CX}" y1="${QP_CY}" x2="${sx(usx)}" y2="${sy(usy)}" stroke="#2a8c2a" stroke-width="3" marker-end="url(#qpG)"/>
+      <circle cx="${sx(usx)}" cy="${sy(usy)}" r="4" fill="#2a8c2a"/>
+      <text x="${sx(usx) + 8}" y="${sy(usy) + 16}" font-family="monospace" font-size="13" fill="#2a8c2a" font-weight="bold">u_safe</text>
+      <line x1="${sx(ux)}" y1="${sy(uy)}" x2="${sx(usx)}" y2="${sy(usy)}" stroke="#888" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <text x="${(sx(ux) + sx(usx))/2 - 30}" y="${(sy(uy) + sy(usy))/2 - 8}" font-family="monospace" font-size="10" fill="#888">projection</text>
+    ` : `
+      <text x="${sx(ux) + 8}" y="${sy(uy) + 16}" font-family="monospace" font-size="11" fill="#2a8c2a"><tspan font-weight="bold">u_safe = u_des</tspan></text>
+    `}
+
+    <!-- Status badge -->
+    <rect x="20" y="15" width="130" height="28" rx="4" fill="${idle ? '#d4edd4' : '#f5cccc'}" stroke="${idle ? '#2a8c2a' : '#c44'}"/>
+    <text x="35" y="34" font-family="monospace" font-size="14" font-weight="bold" fill="${idle ? '#2a8c2a' : '#c44'}">
+      ${idle ? 'QP IDLE' : 'QP ACTIVE'}
+    </text>
+  `;
+
+  qpReadout.innerHTML = `
+    L_g h        = (1.00, 0.00) &nbsp; <em>(fixed for this demo)</em><br>
+    rhs          = − α·h = ${rhs.toFixed(2)}<br>
+    u_des        = (${ux.toFixed(2)}, ${uy.toFixed(2)})<br>
+    L_g h · u_des = ${ux.toFixed(2)}<br>
+    slack        = L_g h · u_des − rhs = ${slack.toFixed(2)}<br>
+    <strong>u_safe       = (${usx.toFixed(2)}, ${usy.toFixed(2)})</strong>
+    ${idle
+      ? '<br><em style="color:#2a8c2a">QP idle: u_safe = u_des. The CBF didn\'t fire. α has zero gradient on u_safe here.</em>'
+      : `<br><em style="color:#c44">QP active: u_safe = u_des projected onto boundary along −L_g h. Deflection magnitude = ${Math.abs(slack).toFixed(2)}. α has nonzero gradient: ∂u_safe/∂α = − L_g h · h / ‖L_g h‖² = (−${h.toFixed(2)}, 0).</em>`}
+  `;
+}
+
+[qp_a, qp_h, qp_ua, qp_um].forEach(s => s.addEventListener('input', qpUpdate));
+qpUpdate();
+</script>
+
+<!-- ───────────────────────────────────────── -->
+<h2>§9 — The full CBF in physical space (multi-obstacle, animated)</h2>
+<div class="panel">
+<p>Most realistic version: 3 obstacles, smoothed h(x) blending all of them, the full CBF filter running. <strong>Drag the robot</strong> with your mouse, set u_des direction with the slider, then hit <strong>Animate</strong> to watch the robot try to follow u_des while the CBF deflects around obstacles.</p>
+
+<div class="math">For N obstacles, h is a smoothed minimum (your code uses this exact form):
+  h(p_rob)  ≈  − τ · log( Σᵢ exp( −hᵢ / τ ) )       hᵢ = ‖p_rob − p_obs_i‖ − (R_rob + Rᵢ)
+
+Gradient becomes a weighted blend of individual escape directions:
+  ∇h  =  Σᵢ wᵢ · (p_rob − p_obs_i) / ‖p_rob − p_obs_i‖       wᵢ ∝ exp(−hᵢ/τ)
+
+  → closer obstacles get more weight (softmin)
+  → wedged between two obstacles ⇒ ∇h points along their bisector</div>
+<p>Dashed circles around each obstacle show the buffered radius (R_obs + R_rob) — that's the actual collision boundary the CBF protects.</p>
+</div>
+
+<div class="controls">
+  <div class="control">
+    <label>α: <span id="cbf_aL">1.0</span></label>
+    <input type="range" id="cbf_a" min="1" max="50" value="10">
+  </div>
+  <div class="control">
+    <label>u_des angle (°): <span id="cbf_uaL">90</span></label>
+    <input type="range" id="cbf_ua" min="-180" max="180" value="90">
+  </div>
+  <div class="control">
+    <label>u_des magnitude (m/s): <span id="cbf_umL">1.0</span></label>
+    <input type="range" id="cbf_um" min="2" max="20" value="10">
+  </div>
+</div>
+
+<div style="display:flex; gap:0.5em; margin: 0.8em 0; align-items: center;">
+  <button id="cbfAnimBtn" style="padding: 0.5em 1.2em; cursor: pointer; font-family: monospace; font-size: 14px;">▶ Animate</button>
+  <button id="cbfResetBtn" style="padding: 0.5em 1.2em; cursor: pointer; font-family: monospace; font-size: 14px;">⟲ Reset</button>
+  <span style="font-family: monospace; font-size: 12px; color: #666; margin-left: 1em;">drag robot with mouse · u_des stays constant during animation</span>
+</div>
+
+<div class="svg-wrap">
+<svg width="700" height="480" id="cbfSvg" viewBox="0 0 700 480"></svg>
+</div>
+
+<div class="readout" id="cbfReadout"></div>
+
+<h2>What to play with (§9)</h2>
+<div class="panel">
+<ul>
+  <li><strong>α=1.0, u_des pointing up, robot at lower-left → Animate.</strong> Watch the trajectory bend around the obstacles. The CBF deflected only when it had to. Reset, then try α=5.0 — same setup, different (less safe-in-clutter) path.</li>
+  <li><strong>Wedge robot between two obstacles.</strong> Look at L_g h direction — it bisects the escape route. Both obstacles contribute via the softmin weights when their hᵢ are similar.</li>
+  <li><strong>Open space ⇒ idle.</strong> Drag robot to a corner away from all obstacles. Status badge flips to QP IDLE — u_safe = u_des, no green arrow at all. <em>This is most of your training data.</em></li>
+  <li><strong>α gradient flows only when active.</strong> Drag near an obstacle until the badge says ACTIVE. Now slide α — the green arrow visibly rotates. Drag to open space, slide α — green arrow doesn't move (it equals u_des). That's the on/off α-gradient mechanism.</li>
+  <li><strong>Implication for training data design:</strong> if you want stronger α-gradient signal, your environment needs more steps where the QP is active. Tighter obstacle density or spawn-near-obstacles is a curriculum lever to consider.</li>
+</ul>
+</div>
+
+<script>
+// ── §9 full multi-obstacle CBF in physical space ──
+const cbfSvg = document.getElementById('cbfSvg');
+const cbf_a = document.getElementById('cbf_a');
+const cbf_ua = document.getElementById('cbf_ua');
+const cbf_um = document.getElementById('cbf_um');
+const cbf_aL = document.getElementById('cbf_aL');
+const cbf_uaL = document.getElementById('cbf_uaL');
+const cbf_umL = document.getElementById('cbf_umL');
+const cbfReadout = document.getElementById('cbfReadout');
+const cbfAnimBtn = document.getElementById('cbfAnimBtn');
+const cbfResetBtn = document.getElementById('cbfResetBtn');
+
+const CBF_W = 700, CBF_H = 480;
+const PX_PER_M = 100;
+const CBF_CX = CBF_W / 2, CBF_CY = CBF_H / 2;
+
+const obstacles = [
+  { x: -1.4, y: 0.4, r: 0.45 },
+  { x: 1.2, y: -0.3, r: 0.40 },
+  { x: 0.1, y: 1.1, r: 0.30 },
+];
+
+const ROBOT_R = 0.15;
+const TAU = 0.25;
+const ROBOT_INIT = [-2.5, -1.5];
+
+let robotPos = [...ROBOT_INIT];
+let trail = [];
+let dragging = false;
+let animating = false;
+let animTimer = null;
+
+function w2s(p) { return [CBF_CX + p[0] * PX_PER_M, CBF_CY - p[1] * PX_PER_M]; }
+function s2w(px, py) { return [(px - CBF_CX) / PX_PER_M, -(py - CBF_CY) / PX_PER_M]; }
+
+function computeCBF(pos) {
+  const hi = [], dirs = [];
+  for (const ob of obstacles) {
+    const dx = pos[0] - ob.x, dy = pos[1] - ob.y;
+    const dist = Math.max(Math.hypot(dx, dy), 1e-6);
+    hi.push(dist - (ob.r + ROBOT_R));
+    dirs.push([dx / dist, dy / dist]);
+  }
+  const minH = Math.min(...hi);
+  const expVals = hi.map(h => Math.exp(-(h - minH) / TAU));
+  const Z = expVals.reduce((a, b) => a + b);
+  const weights = expVals.map(e => e / Z);
+  const h_smooth = -TAU * Math.log(Z) + minH;
+  let gx = 0, gy = 0;
+  for (let i = 0; i < obstacles.length; i++) {
+    gx += weights[i] * dirs[i][0];
+    gy += weights[i] * dirs[i][1];
+  }
+  return { h: h_smooth, lgh: [gx, gy], weights, hi };
+}
+
+function applyCBF(udes, alpha, lgh, h) {
+  const dot = lgh[0]*udes[0] + lgh[1]*udes[1];
+  const rhs = -alpha * h;
+  const slack = dot - rhs;
+  if (slack >= 0) return { usafe: udes, slack, idle: true };
+  const lghNormSq = Math.max(lgh[0]*lgh[0] + lgh[1]*lgh[1], 1e-6);
+  const scale = slack / lghNormSq;
+  return { usafe: [udes[0] - lgh[0]*scale, udes[1] - lgh[1]*scale], slack, idle: false };
+}
+
+function renderCBF() {
+  const alpha = parseFloat(cbf_a.value) / 10;
+  const uaDeg = parseFloat(cbf_ua.value);
+  const um = parseFloat(cbf_um.value) / 10;
+  cbf_aL.textContent = alpha.toFixed(1);
+  cbf_uaL.textContent = uaDeg;
+  cbf_umL.textContent = um.toFixed(1);
+
+  const uaRad = uaDeg * Math.PI / 180;
+  const udes = [um * Math.cos(uaRad), um * Math.sin(uaRad)];
+  const { h, lgh } = computeCBF(robotPos);
+  const { usafe, slack, idle } = applyCBF(udes, alpha, lgh, h);
+
+  const robotPx = w2s(robotPos);
+  const ARROW_SCALE = 100;
+
+  let svg = '';
+  // Light grid
+  for (let i = 0; i < CBF_W; i += 50) svg += `<line x1="${i}" y1="0" x2="${i}" y2="${CBF_H}" stroke="#f3f3f3"/>`;
+  for (let j = 0; j < CBF_H; j += 50) svg += `<line x1="0" y1="${j}" x2="${CBF_W}" y2="${j}" stroke="#f3f3f3"/>`;
+
+  svg += `
+    <defs>
+      <marker id="cbfR" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#d44"/></marker>
+      <marker id="cbfG" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#2a8c2a"/></marker>
+      <marker id="cbfK" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#666"/></marker>
+    </defs>
+  `;
+
+  // Obstacles + buffered boundary
+  for (const ob of obstacles) {
+    const c = w2s([ob.x, ob.y]);
+    svg += `<circle cx="${c[0]}" cy="${c[1]}" r="${(ob.r + ROBOT_R) * PX_PER_M}" fill="none" stroke="#fa9" stroke-width="1" stroke-dasharray="3,3"/>`;
+    svg += `<circle cx="${c[0]}" cy="${c[1]}" r="${ob.r * PX_PER_M}" fill="#fcc" stroke="#a44" stroke-width="2"/>`;
+  }
+
+  // Trail
+  if (trail.length > 1) {
+    let path = `M ${w2s(trail[0])[0]} ${w2s(trail[0])[1]} `;
+    for (let i = 1; i < trail.length; i++) {
+      const p = w2s(trail[i]);
+      path += `L ${p[0]} ${p[1]} `;
+    }
+    svg += `<path d="${path}" stroke="#48d" stroke-width="2" fill="none" opacity="0.55"/>`;
+  }
+
+  // Robot
+  svg += `<circle cx="${robotPx[0]}" cy="${robotPx[1]}" r="${ROBOT_R * PX_PER_M}" fill="#cef" stroke="#48d" stroke-width="2" style="cursor: grab"/>`;
+
+  // L_g h arrow (gray, length 50 px)
+  const lghEnd = [robotPx[0] + lgh[0] * 50, robotPx[1] - lgh[1] * 50];
+  svg += `<line x1="${robotPx[0]}" y1="${robotPx[1]}" x2="${lghEnd[0]}" y2="${lghEnd[1]}" stroke="#666" stroke-width="2" marker-end="url(#cbfK)"/>`;
+  svg += `<text x="${lghEnd[0] + 4}" y="${lghEnd[1] - 2}" font-family="monospace" font-size="11" fill="#666">L_g h</text>`;
+
+  // u_des (red)
+  const udesEnd = [robotPx[0] + udes[0] * ARROW_SCALE, robotPx[1] - udes[1] * ARROW_SCALE];
+  svg += `<line x1="${robotPx[0]}" y1="${robotPx[1]}" x2="${udesEnd[0]}" y2="${udesEnd[1]}" stroke="#d44" stroke-width="3" marker-end="url(#cbfR)"/>`;
+  svg += `<text x="${udesEnd[0] + 5}" y="${udesEnd[1]}" font-family="monospace" font-size="13" fill="#d44" font-weight="bold">u_des</text>`;
+
+  // u_safe (green) only if active
+  if (!idle) {
+    const usafeEnd = [robotPx[0] + usafe[0] * ARROW_SCALE, robotPx[1] - usafe[1] * ARROW_SCALE];
+    svg += `<line x1="${robotPx[0]}" y1="${robotPx[1]}" x2="${usafeEnd[0]}" y2="${usafeEnd[1]}" stroke="#2a8c2a" stroke-width="3" marker-end="url(#cbfG)"/>`;
+    svg += `<text x="${usafeEnd[0] + 5}" y="${usafeEnd[1] + 14}" font-family="monospace" font-size="13" fill="#2a8c2a" font-weight="bold">u_safe</text>`;
+  }
+
+  // Status badge
+  svg += `<rect x="20" y="15" width="130" height="28" rx="4" fill="${idle ? '#d4edd4' : '#f5cccc'}" stroke="${idle ? '#2a8c2a' : '#c44'}"/>`;
+  svg += `<text x="35" y="34" font-family="monospace" font-size="14" font-weight="bold" fill="${idle ? '#2a8c2a' : '#c44'}">${idle ? 'QP IDLE' : 'QP ACTIVE'}</text>`;
+
+  svg += `<text x="20" y="${CBF_H - 15}" font-family="monospace" font-size="11" fill="#666">robot @ (${robotPos[0].toFixed(2)}, ${robotPos[1].toFixed(2)})  ·  drag to move  ·  τ=${TAU}</text>`;
+
+  cbfSvg.innerHTML = svg;
+
+  cbfReadout.innerHTML = `
+    h(p_rob) = ${h.toFixed(2)} m &nbsp; <em>(softmin over ${obstacles.length} obstacles, τ=${TAU})</em><br>
+    L_g h = (${lgh[0].toFixed(2)}, ${lgh[1].toFixed(2)})  &nbsp; ‖L_g h‖ = ${Math.hypot(lgh[0], lgh[1]).toFixed(2)}<br>
+    u_des = (${udes[0].toFixed(2)}, ${udes[1].toFixed(2)}) m/s<br>
+    rhs = −α·h = ${(-alpha * h).toFixed(2)}<br>
+    slack = L_g h · u_des − rhs = ${slack.toFixed(2)}<br>
+    <strong>u_safe = (${usafe[0].toFixed(2)}, ${usafe[1].toFixed(2)}) m/s</strong> &nbsp;&nbsp;
+    ${idle ? '<span class="idle">[idle: u_safe = u_des, no deflection]</span>'
+           : `<span class="active">[active: deflected by ${Math.hypot(usafe[0]-udes[0], usafe[1]-udes[1]).toFixed(2)} m/s along −L_g h]</span>`}
+  `;
+}
+
+cbfSvg.addEventListener('mousedown', (e) => {
+  if (animating) return;
+  const rect = cbfSvg.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (CBF_W / rect.width);
+  const py = (e.clientY - rect.top)  * (CBF_H / rect.height);
+  const wp = s2w(px, py);
+  if (Math.hypot(wp[0] - robotPos[0], wp[1] - robotPos[1]) < ROBOT_R + 0.12) {
+    dragging = true;
+    cbfSvg.style.cursor = 'grabbing';
+  }
+});
+cbfSvg.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  const rect = cbfSvg.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (CBF_W / rect.width);
+  const py = (e.clientY - rect.top)  * (CBF_H / rect.height);
+  robotPos = s2w(px, py);
+  trail = [];
+  renderCBF();
+});
+cbfSvg.addEventListener('mouseup',    () => { dragging = false; cbfSvg.style.cursor = ''; });
+cbfSvg.addEventListener('mouseleave', () => { dragging = false; cbfSvg.style.cursor = ''; });
+
+[cbf_a, cbf_ua, cbf_um].forEach(s => s.addEventListener('input', renderCBF));
+
+cbfAnimBtn.addEventListener('click', () => {
+  if (animating) {
+    animating = false;
+    cbfAnimBtn.textContent = '▶ Animate';
+    if (animTimer) { clearInterval(animTimer); animTimer = null; }
+    return;
+  }
+  animating = true;
+  cbfAnimBtn.textContent = '⏸ Stop';
+  const dt = 0.05;
+  animTimer = setInterval(() => {
+    const alpha = parseFloat(cbf_a.value) / 10;
+    const uaRad = parseFloat(cbf_ua.value) * Math.PI / 180;
+    const um = parseFloat(cbf_um.value) / 10;
+    const udes = [um * Math.cos(uaRad), um * Math.sin(uaRad)];
+    const { h, lgh } = computeCBF(robotPos);
+    const { usafe } = applyCBF(udes, alpha, lgh, h);
+    robotPos[0] += usafe[0] * dt;
+    robotPos[1] += usafe[1] * dt;
+    trail.push([robotPos[0], robotPos[1]]);
+    if (trail.length > 400) trail.shift();
+    if (Math.abs(robotPos[0]) > 3.4 || Math.abs(robotPos[1]) > 2.3) {
+      animating = false;
+      cbfAnimBtn.textContent = '▶ Animate';
+      clearInterval(animTimer); animTimer = null;
+    }
+    renderCBF();
+  }, 50);
+});
+
+cbfResetBtn.addEventListener('click', () => {
+  if (animating) {
+    animating = false;
+    cbfAnimBtn.textContent = '▶ Animate';
+    if (animTimer) { clearInterval(animTimer); animTimer = null; }
+  }
+  robotPos = [...ROBOT_INIT];
+  trail = [];
+  renderCBF();
+});
+
+renderCBF();
+</script>
+
+<!-- ───────────────────────────────────────── -->
+<h2>§10 — LHS field over physical space (where the QP fires)</h2>
+<div class="panel">
+<p>Colored map of LHS = L_g h · u_des + α·h across the entire arena, for the α and u_des direction you set. <strong>Green = idle zone</strong> (constraint slack, QP doesn't fire). <strong>Red = active zone</strong> (constraint violated by u_des, QP must project). Black = inside obstacle.</p>
+<p>This is the answer to "as observation changes, how does LHS change?" — every position in the world is one possible obs (h, L_g h depend on position), and the heatmap shows LHS at every one.</p>
+<div class="math">For each grid cell at world position (x, y):
+  h(x, y), L_g h(x, y) computed from softmin over the same 3 obstacles
+  LHS(x, y)  =  L_g h(x, y) · u_des  +  α · h(x, y)
+
+The boundary where LHS = 0 is the "QP firing line": cross from green into red
+and the projection turns on. Sweep the sliders to watch this boundary breathe.</div>
+</div>
+
+<div class="controls">
+  <div class="control">
+    <label>α: <span id="hm_aL">1.0</span></label>
+    <input type="range" id="hm_a" min="1" max="50" value="10">
+  </div>
+  <div class="control">
+    <label>u_des angle (°): <span id="hm_uaL">90</span></label>
+    <input type="range" id="hm_ua" min="-180" max="180" value="90">
+  </div>
+  <div class="control">
+    <label>u_des magnitude (m/s): <span id="hm_umL">1.0</span></label>
+    <input type="range" id="hm_um" min="2" max="20" value="10">
+  </div>
+</div>
+
+<div class="svg-wrap">
+  <div style="position: relative; width: 720px; height: 480px;">
+    <canvas id="hmCanvas" width="720" height="480" style="position: absolute; left: 0; top: 0; border: 1px solid #999; border-radius: 4px;"></canvas>
+    <svg width="720" height="480" id="hmSvg" viewBox="0 0 720 480" style="position: absolute; left: 0; top: 0;"></svg>
+  </div>
+</div>
+
+<div class="readout" id="hmReadout"></div>
+
+<h2>What to play with (§10)</h2>
+<div class="panel">
+<ul>
+  <li><strong>Default (α=1, u_des up).</strong> See the green-red boundary curl around each obstacle on the side the planner points toward. The thin red crescents are exactly where the QP fires.</li>
+  <li><strong>Slide α from 0.1 to 5.0.</strong> Watch the red crescents SHRINK and eventually vanish. At α=5, almost nothing is red — the α-shield made the constraint never bind. <em>This is why high-α policies act like raw teleop.</em></li>
+  <li><strong>Slide α to 0.1.</strong> Red blooms outward — even far from obstacles, the constraint is touchy. Fixed-α=0.1 is "always cautious." It's why low-α can win on safety but lose on goal-reach.</li>
+  <li><strong>Rotate u_des by 180°.</strong> The red crescents flip sides — they always sit on the obstacle side that u_des points TOWARD. The CBF is purely reactive to "where teleop is heading."</li>
+  <li><strong>Imagine training data here.</strong> Robots spawn at random positions, walk for 800 steps. Most of the canvas is GREEN — this is where most of your training samples live. The α gradient is dead in green. Only the slim red region produces α-learning signal. <em>This is what v3.0b/c tries to fix.</em></li>
+  <li><strong>Connection to v3.0b.</strong> By putting h(x,y) and L_g h·u_des into the policy's observation, the policy can directly see "I'm at a green spot" or "I'm near the red boundary" and choose α accordingly. Without this obs, it has to learn it from the raw 8192-dim grid.</li>
+</ul>
+</div>
+
+<script>
+// ── §10 LHS heatmap + draggable robot overlay ──
+const hmCanvas = document.getElementById('hmCanvas');
+const hmSvg = document.getElementById('hmSvg');
+const hm_a = document.getElementById('hm_a');
+const hm_ua = document.getElementById('hm_ua');
+const hm_um = document.getElementById('hm_um');
+const hm_aL = document.getElementById('hm_aL');
+const hm_uaL = document.getElementById('hm_uaL');
+const hm_umL = document.getElementById('hm_umL');
+const hmReadout = document.getElementById('hmReadout');
+
+// World/screen mapping for this section
+const HM_W = 720, HM_H = 480;
+const HM_PX_PER_M = 100;
+const HM_CX = HM_W / 2, HM_CY = HM_H / 2;
+const HM_TAU = 0.25;
+const HM_ROBOT_R = 0.15;
+
+// Reuse the same 3 obstacles as §9 for visual continuity
+const HM_OBSTACLES = [
+  { x: -1.4, y: 0.4, r: 0.45 },
+  { x: 1.2, y: -0.3, r: 0.40 },
+  { x: 0.1, y: 1.1, r: 0.30 },
+];
+
+let hm_robotPos = [-2.5, -1.5];
+let hm_dragging = false;
+
+function hm_w2s(p) { return [HM_CX + p[0] * HM_PX_PER_M, HM_CY - p[1] * HM_PX_PER_M]; }
+function hm_s2w(px, py) { return [(px - HM_CX) / HM_PX_PER_M, -(py - HM_CY) / HM_PX_PER_M]; }
+
+function hm_computeCBFAt(pos) {
+  const hi = [], dirs = [];
+  for (const ob of HM_OBSTACLES) {
+    const dx = pos[0] - ob.x, dy = pos[1] - ob.y;
+    const dist = Math.max(Math.hypot(dx, dy), 1e-6);
+    hi.push(dist - (ob.r + HM_ROBOT_R));
+    dirs.push([dx / dist, dy / dist]);
+  }
+  const minH = Math.min(...hi);
+  const expVals = hi.map(h => Math.exp(-(h - minH) / HM_TAU));
+  const Z = expVals.reduce((a, b) => a + b);
+  const weights = expVals.map(e => e / Z);
+  const h_smooth = -HM_TAU * Math.log(Z) + minH;
+  let gx = 0, gy = 0;
+  for (let i = 0; i < HM_OBSTACLES.length; i++) {
+    gx += weights[i] * dirs[i][0];
+    gy += weights[i] * dirs[i][1];
+  }
+  return { h: h_smooth, lgh: [gx, gy], minH };
+}
+
+function hm_renderHeatmap(alpha, udes) {
+  // Render heatmap at low resolution then scale up via drawImage.
+  const HM_RES_W = 180, HM_RES_H = 120;
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = HM_RES_W;
+  offCanvas.height = HM_RES_H;
+  const offCtx = offCanvas.getContext('2d');
+  const imgData = offCtx.createImageData(HM_RES_W, HM_RES_H);
+
+  // Each heatmap cell represents this many world meters
+  const dx_m = (HM_W / HM_PX_PER_M) / HM_RES_W;
+  const dy_m = (HM_H / HM_PX_PER_M) / HM_RES_H;
+  const wx0 = -(HM_W / HM_PX_PER_M) / 2;
+  const wy0 =  (HM_H / HM_PX_PER_M) / 2;
+
+  for (let py = 0; py < HM_RES_H; py++) {
+    const wy = wy0 - (py + 0.5) * dy_m;
+    for (let px = 0; px < HM_RES_W; px++) {
+      const wx = wx0 + (px + 0.5) * dx_m;
+      const { h, lgh, minH } = hm_computeCBFAt([wx, wy]);
+      const lhs = lgh[0] * udes[0] + lgh[1] * udes[1] + alpha * h;
+
+      let r, g, b, a = 200;
+      if (minH < 0) {
+        // Inside an obstacle (raw, before softmin) — show as dark gray
+        r = 60; g = 40; b = 40; a = 240;
+      } else if (lhs < 0) {
+        // Active zone — red. Intensity scaled by |lhs|.
+        const t = Math.min(1, -lhs / 2.0);
+        r = 240;
+        g = Math.round(220 - 180 * t);
+        b = Math.round(220 - 180 * t);
+      } else {
+        // Idle zone — green. Lighter the further from boundary.
+        const t = Math.min(1, lhs / 4.0);
+        r = Math.round(230 - 130 * t);
+        g = 240;
+        b = Math.round(230 - 130 * t);
+      }
+      const idx = (py * HM_RES_W + px) * 4;
+      imgData.data[idx + 0] = r;
+      imgData.data[idx + 1] = g;
+      imgData.data[idx + 2] = b;
+      imgData.data[idx + 3] = a;
+    }
+  }
+  offCtx.putImageData(imgData, 0, 0);
+
+  const ctx = hmCanvas.getContext('2d');
+  ctx.clearRect(0, 0, HM_W, HM_H);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(offCanvas, 0, 0, HM_W, HM_H);
+
+  // Draw obstacle boundary circles (sharp on top of heatmap)
+  ctx.lineWidth = 2;
+  for (const ob of HM_OBSTACLES) {
+    const c = hm_w2s([ob.x, ob.y]);
+    ctx.strokeStyle = '#a44';
+    ctx.fillStyle = '#fcc';
+    ctx.beginPath();
+    ctx.arc(c[0], c[1], ob.r * HM_PX_PER_M, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // Buffered (R_obs + R_rob) ring
+    ctx.strokeStyle = '#fa9';
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.arc(c[0], c[1], (ob.r + HM_ROBOT_R) * HM_PX_PER_M, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function hm_renderOverlay(alpha, udes, udesAng) {
+  const robotPx = hm_w2s(hm_robotPos);
+  const { h, lgh } = hm_computeCBFAt(hm_robotPos);
+  const dot = lgh[0] * udes[0] + lgh[1] * udes[1];
+  const lhs = dot + alpha * h;
+  const idle = lhs >= 0;
+
+  const ARROW = 100;
+  const udesEnd = [robotPx[0] + udes[0] * ARROW, robotPx[1] - udes[1] * ARROW];
+  const lghEnd = [robotPx[0] + lgh[0] * 50, robotPx[1] - lgh[1] * 50];
+
+  let svg = `
+    <defs>
+      <marker id="hmR" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#d44"/></marker>
+      <marker id="hmK" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0,0 10,3 0,6" fill="#222"/></marker>
+    </defs>
+    <circle cx="${robotPx[0]}" cy="${robotPx[1]}" r="${HM_ROBOT_R * HM_PX_PER_M}" fill="#cef" stroke="#48d" stroke-width="2.5" style="cursor: grab"/>
+    <line x1="${robotPx[0]}" y1="${robotPx[1]}" x2="${lghEnd[0]}" y2="${lghEnd[1]}" stroke="#222" stroke-width="2" marker-end="url(#hmK)"/>
+    <text x="${lghEnd[0] + 4}" y="${lghEnd[1] - 2}" font-family="monospace" font-size="11" fill="#222">L_g h</text>
+    <line x1="${robotPx[0]}" y1="${robotPx[1]}" x2="${udesEnd[0]}" y2="${udesEnd[1]}" stroke="#d44" stroke-width="3" marker-end="url(#hmR)"/>
+    <text x="${udesEnd[0] + 5}" y="${udesEnd[1]}" font-family="monospace" font-size="13" fill="#d44" font-weight="bold">u_des</text>
+
+    <rect x="20" y="15" width="160" height="32" rx="4" fill="${idle ? 'rgba(212,237,212,0.95)' : 'rgba(245,204,204,0.95)'}" stroke="${idle ? '#2a8c2a' : '#c44'}"/>
+    <text x="35" y="36" font-family="monospace" font-size="14" font-weight="bold" fill="${idle ? '#2a8c2a' : '#c44'}">
+      ${idle ? 'IDLE  (LHS = ' + lhs.toFixed(2) + ')' : 'ACTIVE  (LHS = ' + lhs.toFixed(2) + ')'}
+    </text>
+
+    <rect x="${HM_W - 175}" y="15" width="160" height="62" rx="4" fill="rgba(255,255,255,0.92)" stroke="#888"/>
+    <text x="${HM_W - 165}" y="32" font-family="monospace" font-size="11" fill="#666">α = ${alpha.toFixed(1)}</text>
+    <text x="${HM_W - 165}" y="48" font-family="monospace" font-size="11" fill="#666">u_des dir = ${udesAng}°</text>
+    <text x="${HM_W - 165}" y="64" font-family="monospace" font-size="11" fill="#666">‖u_des‖ = ${Math.hypot(udes[0], udes[1]).toFixed(2)} m/s</text>
+  `;
+
+  hmSvg.innerHTML = svg;
+
+  hmReadout.innerHTML = `
+    h(robot) = ${h.toFixed(2)} m  &nbsp;|&nbsp;  L_g h · u_des = ${dot.toFixed(2)}  &nbsp;|&nbsp;  α·h = ${(alpha * h).toFixed(2)}<br>
+    <strong>LHS at robot = ${lhs.toFixed(2)}</strong>  &nbsp;${idle
+      ? '<span class="idle">[IDLE: green zone]</span>'
+      : '<span class="active">[ACTIVE: red zone, QP firing]</span>'}<br>
+    <em>Drag the robot to a different colored region to see LHS change.</em>
+  `;
+}
+
+function hm_renderAll() {
+  const alpha = parseFloat(hm_a.value) / 10;
+  const uaDeg = parseFloat(hm_ua.value);
+  const um = parseFloat(hm_um.value) / 10;
+  hm_aL.textContent = alpha.toFixed(1);
+  hm_uaL.textContent = uaDeg;
+  hm_umL.textContent = um.toFixed(1);
+  const uaRad = uaDeg * Math.PI / 180;
+  const udes = [um * Math.cos(uaRad), um * Math.sin(uaRad)];
+  hm_renderHeatmap(alpha, udes);
+  hm_renderOverlay(alpha, udes, uaDeg);
+}
+
+function hm_renderOverlayOnly() {
+  const alpha = parseFloat(hm_a.value) / 10;
+  const uaDeg = parseFloat(hm_ua.value);
+  const um = parseFloat(hm_um.value) / 10;
+  const uaRad = uaDeg * Math.PI / 180;
+  const udes = [um * Math.cos(uaRad), um * Math.sin(uaRad)];
+  hm_renderOverlay(alpha, udes, uaDeg);
+}
+
+[hm_a, hm_ua, hm_um].forEach(s => s.addEventListener('input', hm_renderAll));
+
+hmSvg.addEventListener('mousedown', (e) => {
+  const rect = hmSvg.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (HM_W / rect.width);
+  const py = (e.clientY - rect.top)  * (HM_H / rect.height);
+  const wp = hm_s2w(px, py);
+  if (Math.hypot(wp[0] - hm_robotPos[0], wp[1] - hm_robotPos[1]) < HM_ROBOT_R + 0.12) {
+    hm_dragging = true;
+    hmSvg.style.cursor = 'grabbing';
+  }
+});
+hmSvg.addEventListener('mousemove', (e) => {
+  if (!hm_dragging) return;
+  const rect = hmSvg.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (HM_W / rect.width);
+  const py = (e.clientY - rect.top)  * (HM_H / rect.height);
+  hm_robotPos = hm_s2w(px, py);
+  hm_renderOverlayOnly(); // heatmap doesn't depend on robot pos
+});
+hmSvg.addEventListener('mouseup',    () => { hm_dragging = false; hmSvg.style.cursor = ''; });
+hmSvg.addEventListener('mouseleave', () => { hm_dragging = false; hmSvg.style.cursor = ''; });
+
+hm_renderAll();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Multi-obstacle SDF + smoothing — interactive</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 920px;
+    margin: 1.5rem auto;
+    padding: 0 1rem;
+    color: #222;
+    line-height: 1.45;
+  }
+  h1 { border-bottom: 2px solid #333; padding-bottom: .25em; font-size: 1.4em; }
+  .formula {
+    font-family: "Cambria Math", Georgia, serif;
+    font-size: 1.05em;
+    background: #f4f4f8;
+    padding: .6rem .9rem;
+    border-left: 4px solid #4a76d3;
+    border-radius: 4px;
+    margin: .6rem 0;
+  }
+  .scene-wrap {
+    position: relative;
+    width: 800px;
+    height: 600px;
+    border: 1px solid #999;
+    margin: .8rem 0;
+  }
+  canvas, svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  svg { pointer-events: none; }
+  svg > * { pointer-events: auto; }
+  .obstacle {
+    fill: rgba(40, 40, 40, 0.55);
+    stroke: #111;
+    stroke-width: 2;
+    cursor: grab;
+  }
+  .obstacle:active { cursor: grabbing; }
+  .robot {
+    fill: white;
+    stroke: #c33;
+    stroke-width: 2.5;
+    cursor: grab;
+  }
+  .robot:active { cursor: grabbing; }
+  .controls {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    gap: 0.4em 1em;
+    align-items: center;
+    margin: .8rem 0;
+    background: #fafafa;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+  }
+  .controls label { font-weight: 600; font-family: "Cambria Math", Georgia, serif; }
+  .controls input[type=range] { width: 100%; }
+  .controls .val { font-family: monospace; min-width: 4em; }
+  .info {
+    background: #fffbe6;
+    padding: .6rem .9rem;
+    border-left: 4px solid #d4a72c;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: .95em;
+    margin: .6rem 0;
+  }
+  button {
+    padding: .35rem .8rem;
+    border: 1px solid #555;
+    background: #eee;
+    cursor: pointer;
+    font-size: .9em;
+    border-radius: 4px;
+  }
+  button:hover { background: #e0e0e0; }
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: .8em;
+    margin: .5em 0;
+    font-size: .9em;
+  }
+  .legend-bar {
+    display: inline-block;
+    width: 220px;
+    height: 16px;
+    background: linear-gradient(to right,
+      rgb(220, 30, 30),  /* deeply unsafe */
+      rgb(255, 200, 60), /* boundary */
+      rgb(80, 200, 100), /* safe */
+      rgb(30, 60, 200)   /* saturated */
+    );
+    border: 1px solid #888;
+    border-radius: 2px;
+  }
+  ul.notes { font-size: .92em; color: #555; }
+  ul.notes li { margin: .25em 0; }
+</style>
+</head>
+<body>
+
+<h1>Multi-obstacle SDF + smoothing — interactive</h1>
+
+<p>Drag any obstacle (gray) or the robot (white). Adjust the sliders. The colored field is
+<em>h<sub>smooth</sub>(x)</em> evaluated everywhere in the scene.</p>
+
+<div class="formula">
+  h<sub>smooth</sub>(p)  =  λ · (1 − exp(−γ · min<sub>i</sub> ( ‖p − ρ<sub>i</sub>‖ − R )))
+</div>
+
+<div class="info" id="info">
+  h(robot) = ?, sdf_min = ?, closest obstacle = ?, distance to closest = ?
+</div>
+
+<div class="legend">
+  <span>h value:</span>
+  <span style="font-family: monospace;">−λ</span>
+  <span class="legend-bar"></span>
+  <span style="font-family: monospace;">+λ (saturated)</span>
+</div>
+
+<div class="scene-wrap" id="scene">
+  <canvas class="heatmap" width="800" height="600"></canvas>
+  <svg class="overlay" width="800" height="600" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+
+<div class="controls">
+  <label>λ:</label>
+  <span class="val" id="lambdaVal">1.00</span>
+  <input type="range" id="lambdaSlider" min="0.1" max="3" step="0.05" value="1.0">
+  <span style="font-size: .85em; color: #555;">caps how high h saturates</span>
+
+  <label>γ:</label>
+  <span class="val" id="gammaVal">0.50</span>
+  <input type="range" id="gammaSlider" min="0.1" max="3" step="0.05" value="0.5">
+  <span style="font-size: .85em; color: #555;">how fast h saturates</span>
+
+  <label>R:</label>
+  <span class="val" id="rVal">0.50</span>
+  <input type="range" id="rSlider" min="0.1" max="2" step="0.05" value="0.5">
+  <span style="font-size: .85em; color: #555;">obstacle danger radius (same for all)</span>
+
+  <label>obstacles:</label>
+  <span class="val" id="obsCountVal">2</span>
+  <div>
+    <button id="addObstacle">+ add</button>
+    <button id="removeObstacle">− remove</button>
+    <button id="resetBtn" style="margin-left: 1em;">reset</button>
+  </div>
+  <span style="font-size: .85em; color: #555;">drag any obstacle to reposition</span>
+</div>
+
+<ul class="notes">
+  <li>Yellow band marks <strong>h ≈ 0</strong> — the safety boundary, exactly at distance R from the closest obstacle.</li>
+  <li>Blue regions are <strong>saturated safe</strong> — far from any obstacle, h ≈ λ.</li>
+  <li>Red regions are <strong>inside an obstacle's danger zone</strong> — h is negative.</li>
+  <li>The dashed line from the robot points to its closest obstacle.</li>
+  <li>Try increasing γ — watch the band between yellow and blue get thinner (h saturates faster).</li>
+  <li>Try adding many obstacles — the boundary band wraps around all of them; the min function picks whichever is closest.</li>
+</ul>
+
+<script>
+"use strict";
+
+// =============================================================
+// Coordinate system
+// =============================================================
+const W = 800, H = 600;
+const PX_PER_M = 100;          // 1 meter = 100 pixels
+const ORIGIN_PX = { x: 400, y: 300 };
+
+function pxToWorld(px, py) {
+  return {
+    x:  (px - ORIGIN_PX.x) / PX_PER_M,
+    y: -(py - ORIGIN_PX.y) / PX_PER_M,   // flip y so up = +y
+  };
+}
+function worldToPx(wx, wy) {
+  return {
+    x:  wx * PX_PER_M + ORIGIN_PX.x,
+    y: -wy * PX_PER_M + ORIGIN_PX.y,
+  };
+}
+
+// =============================================================
+// State
+// =============================================================
+const initialObstacles = () => ([
+  { x:  1.5, y:  0.0 },
+  { x: -1.5, y:  0.7 },
+]);
+
+let obstacles = initialObstacles();
+let robot     = { x: 0.0, y: 0.0 };
+let params    = { lambda: 1.0, gamma: 0.5, R: 0.5 };
+
+// =============================================================
+// Math: per-point h_smooth
+// =============================================================
+function computeSdf(p) {
+  let sdfMin = Infinity;
+  let closestIdx = -1;
+  for (let i = 0; i < obstacles.length; i++) {
+    const dx = p.x - obstacles[i].x;
+    const dy = p.y - obstacles[i].y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const sdf = dist - params.R;
+    if (sdf < sdfMin) { sdfMin = sdf; closestIdx = i; }
+  }
+  return { sdfMin, closestIdx };
+}
+function computeH(p) {
+  const { sdfMin, closestIdx } = computeSdf(p);
+  const h = params.lambda * (1.0 - Math.exp(-params.gamma * sdfMin));
+  return { h, sdfMin, closestIdx };
+}
+
+// =============================================================
+// Color mapping: h in [-λ, +λ] -> RGB (red -> yellow -> green -> blue)
+// =============================================================
+function colorFromH(h) {
+  // Normalize to t in [0, 1]
+  let t = (h + params.lambda) / (2 * params.lambda);
+  t = Math.max(0, Math.min(1, t));
+
+  // Three-stop gradient: red(0) -> yellow(0.5) -> green(0.75) -> blue(1)
+  let r, g, b;
+  if (t < 0.5) {
+    // red to yellow
+    const u = t / 0.5;
+    r = 220 + Math.floor(35 * u);
+    g = Math.floor(200 * u);
+    b = Math.floor(60  * u);
+  } else if (t < 0.75) {
+    // yellow to green
+    const u = (t - 0.5) / 0.25;
+    r = Math.floor(255 * (1 - u) + 80 * u);
+    g = Math.floor(200 + 0 * u);
+    b = Math.floor(60 + 40 * u);
+  } else {
+    // green to blue
+    const u = (t - 0.75) / 0.25;
+    r = Math.floor(80 * (1 - u) + 30  * u);
+    g = Math.floor(200 * (1 - u) + 60 * u);
+    b = Math.floor(100 * (1 - u) + 200 * u);
+  }
+  return [r, g, b];
+}
+
+// =============================================================
+// Heatmap rendering (Canvas, sampling at every 2 pixels for speed)
+// =============================================================
+function drawHeatmap() {
+  const canvas = document.querySelector('canvas.heatmap');
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.createImageData(W, H);
+  const data = imageData.data;
+
+  const STEP = 2;
+  for (let py = 0; py < H; py += STEP) {
+    for (let px = 0; px < W; px += STEP) {
+      const w = pxToWorld(px, py);
+      const { h } = computeH(w);
+      const [r, g, b] = colorFromH(h);
+      // Fill the STEP x STEP block
+      for (let dy = 0; dy < STEP && py + dy < H; dy++) {
+        for (let dx = 0; dx < STEP && px + dx < W; dx++) {
+          const idx = ((py + dy) * W + (px + dx)) * 4;
+          data[idx]     = r;
+          data[idx + 1] = g;
+          data[idx + 2] = b;
+          data[idx + 3] = 255;
+        }
+      }
+    }
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// =============================================================
+// SVG overlay (obstacles, robot, labels, connecting line)
+// =============================================================
+function drawOverlay() {
+  const svg = document.querySelector('svg.overlay');
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  // Connecting line from robot to closest obstacle
+  const { h, sdfMin, closestIdx } = computeH(robot);
+  if (closestIdx >= 0) {
+    const robotPx = worldToPx(robot.x, robot.y);
+    const obsPx   = worldToPx(obstacles[closestIdx].x, obstacles[closestIdx].y);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', robotPx.x);
+    line.setAttribute('y1', robotPx.y);
+    line.setAttribute('x2', obsPx.x);
+    line.setAttribute('y2', obsPx.y);
+    line.setAttribute('stroke', '#333');
+    line.setAttribute('stroke-width', '1.5');
+    line.setAttribute('stroke-dasharray', '6,4');
+    line.style.pointerEvents = 'none';
+    svg.appendChild(line);
+  }
+
+  // Obstacles
+  const r_px = params.R * PX_PER_M;
+  for (let i = 0; i < obstacles.length; i++) {
+    const obs = obstacles[i];
+    const px = worldToPx(obs.x, obs.y);
+
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', px.x);
+    c.setAttribute('cy', px.y);
+    c.setAttribute('r', r_px);
+    c.setAttribute('class', 'obstacle');
+    c.dataset.type = 'obstacle';
+    c.dataset.idx = i;
+    svg.appendChild(c);
+
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', px.x);
+    dot.setAttribute('cy', px.y);
+    dot.setAttribute('r', 2.5);
+    dot.setAttribute('fill', '#000');
+    dot.style.pointerEvents = 'none';
+    svg.appendChild(dot);
+
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', px.x);
+    label.setAttribute('y', px.y - r_px - 6);
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('font-family', 'sans-serif');
+    label.setAttribute('font-size', '12');
+    label.setAttribute('fill', '#000');
+    label.style.pointerEvents = 'none';
+    label.textContent = `ρ${i}`;
+    svg.appendChild(label);
+  }
+
+  // Robot
+  const rpx = worldToPx(robot.x, robot.y);
+  const robotCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  robotCircle.setAttribute('cx', rpx.x);
+  robotCircle.setAttribute('cy', rpx.y);
+  robotCircle.setAttribute('r', 8);
+  robotCircle.setAttribute('class', 'robot');
+  robotCircle.dataset.type = 'robot';
+  svg.appendChild(robotCircle);
+
+  // Robot value label
+  const robotLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  robotLabel.setAttribute('x', rpx.x + 12);
+  robotLabel.setAttribute('y', rpx.y + 4);
+  robotLabel.setAttribute('font-family', 'monospace');
+  robotLabel.setAttribute('font-size', '12');
+  robotLabel.setAttribute('fill', '#000');
+  robotLabel.setAttribute('font-weight', 'bold');
+  robotLabel.style.pointerEvents = 'none';
+  robotLabel.textContent = `h = ${h.toFixed(3)}`;
+  svg.appendChild(robotLabel);
+
+  // Info bar
+  const dist = sdfMin + params.R;  // back out actual center-to-center
+  document.getElementById('info').textContent =
+    `h(robot) = ${h.toFixed(3)},  sdf_min = ${sdfMin.toFixed(3)},  ` +
+    `closest obstacle = ρ${closestIdx},  distance to closest center = ${dist.toFixed(3)}`;
+}
+
+function redraw() {
+  drawHeatmap();
+  drawOverlay();
+}
+
+// =============================================================
+// Drag handling
+// =============================================================
+let dragging = null;
+function onPointerDown(e) {
+  const tgt = e.target;
+  if (tgt.classList && (tgt.classList.contains('obstacle') || tgt.classList.contains('robot'))) {
+    dragging = tgt;
+    tgt.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  }
+}
+function onPointerMove(e) {
+  if (!dragging) return;
+  const rect = document.querySelector('#scene').getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+  const w = pxToWorld(
+    Math.max(0, Math.min(W, px)),
+    Math.max(0, Math.min(H, py))
+  );
+  if (dragging.dataset.type === 'obstacle') {
+    obstacles[parseInt(dragging.dataset.idx, 10)] = w;
+  } else if (dragging.dataset.type === 'robot') {
+    robot = w;
+  }
+  redraw();
+}
+function onPointerUp() {
+  dragging = null;
+}
+document.querySelector('svg.overlay').addEventListener('pointerdown', onPointerDown);
+document.addEventListener('pointermove', onPointerMove);
+document.addEventListener('pointerup', onPointerUp);
+
+// =============================================================
+// Slider handling
+// =============================================================
+function bindSlider(sliderId, valId, key, format = (v) => v.toFixed(2)) {
+  const slider = document.getElementById(sliderId);
+  const valEl  = document.getElementById(valId);
+  slider.addEventListener('input', (e) => {
+    params[key] = parseFloat(e.target.value);
+    valEl.textContent = format(params[key]);
+    redraw();
+  });
+}
+bindSlider('lambdaSlider', 'lambdaVal', 'lambda');
+bindSlider('gammaSlider',  'gammaVal',  'gamma');
+bindSlider('rSlider',      'rVal',      'R');
+
+// =============================================================
+// Buttons
+// =============================================================
+document.getElementById('addObstacle').addEventListener('click', () => {
+  obstacles.push({
+    x: (Math.random() - 0.5) * 6,
+    y: (Math.random() - 0.5) * 4,
+  });
+  document.getElementById('obsCountVal').textContent = obstacles.length;
+  redraw();
+});
+document.getElementById('removeObstacle').addEventListener('click', () => {
+  if (obstacles.length > 1) {
+    obstacles.pop();
+    document.getElementById('obsCountVal').textContent = obstacles.length;
+    redraw();
+  }
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  obstacles = initialObstacles();
+  robot = { x: 0, y: 0 };
+  params = { lambda: 1.0, gamma: 0.5, R: 0.5 };
+  document.getElementById('lambdaSlider').value = 1.0;
+  document.getElementById('gammaSlider').value  = 0.5;
+  document.getElementById('rSlider').value      = 0.5;
+  document.getElementById('lambdaVal').textContent = '1.00';
+  document.getElementById('gammaVal').textContent  = '0.50';
+  document.getElementById('rVal').textContent      = '0.50';
+  document.getElementById('obsCountVal').textContent = obstacles.length;
+  redraw();
+});
+
+document.getElementById('obsCountVal').textContent = obstacles.length;
+redraw();
+</script>
+
+</body>
+</html>

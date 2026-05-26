@@ -1,0 +1,55 @@
+{
+  "task": "Isaac-CBF-Go2-RMA-Layer3-PhiWin-TightCor-V8-v0",
+  "checkpoint": "logs/rsl_rl/cbf_go2_teacher_rma/2026-05-19_14-18-46/model_2499.pt",
+  "n_envs": 256,
+  "n_rollout_steps": 100,
+  "priv_dim": 33,
+  "z_grid_dim": 64,
+  "n_samples_total": 25600,
+  "n_train": 20480,
+  "n_test": 5120,
+  "linear_probe": {
+    "occupancy_total": {
+      "r2_train": 0.360852327588004,
+      "r2_test": 0.3545966259538492,
+      "mse_test": 2930.6360437768844,
+      "feature_std": 67.38533020019531,
+      "feature_mean": 96.92207336425781
+    },
+    "prev_occupancy_total": {
+      "r2_train": 0.36600210266451294,
+      "r2_test": 0.3652832905609076,
+      "mse_test": 2858.2932284421,
+      "feature_std": 67.1063232421875,
+      "feature_mean": 95.63496398925781
+    },
+    "nearest_dist": {
+      "r2_train": 0.3828248136802721,
+      "r2_test": 0.37447605383891824,
+      "mse_test": 114.27788754616911,
+      "feature_std": 13.516341209411621,
+      "feature_mean": 17.6585750579834
+    },
+    "obstacle_com_x": {
+      "r2_train": 0.2884476426852286,
+      "r2_test": 0.29001505484824663,
+      "mse_test": 161.91104405846468,
+      "feature_std": 15.101276397705078,
+      "feature_mean": 31.971023559570312
+    },
+    "obstacle_com_y": {
+      "r2_train": 0.3413791055786206,
+      "r2_test": 0.33618928676168824,
+      "mse_test": 123.33036641215203,
+      "feature_std": 13.630534172058105,
+      "feature_mean": 36.9668083190918
+    },
+    "motion_total": {
+      "r2_train": 0.09681641355720583,
+      "r2_test": 0.10213039044365979,
+      "mse_test": 297.56486124677434,
+      "feature_std": 18.204727172851562,
+      "feature_mean": 17.498046875
+    }
+  }
+}

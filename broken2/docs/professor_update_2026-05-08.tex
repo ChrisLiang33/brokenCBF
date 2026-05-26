@@ -1,0 +1,394 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{titlesec}
+\usepackage{parskip}
+
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.2ex}{0.4ex}
+\setlist{nosep,leftmargin=1.2em}
+\renewcommand{\arraystretch}{1.05}
+\setlength{\parskip}{0.5ex}
+
+\newcommand{\R}{\mathbb{R}}
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Configuration Snapshot}
+\end{center}
+
+\vspace{-1ex}
+
+% =====================================================================
+\section{Pipeline}
+
+\begin{small}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Hardware    & Unitree Go2 + Livox Mid-360 LiDAR; ROS 2 Humble on Jetson Orin. Lab compute: RTX 5090. \\
+Sim         & Isaac Lab on \texttt{Isaac-Velocity-Flat-Unitree-Go2-v0}. \\
+Locomotion  & Off-the-shelf flat-trained policy, frozen black box. Drop-in safety filter --- works with any user's locomotion stack. \\
+Robot model & Single-integrator $\dot{x}_{\text{robot}} = u$; $L_g h \neq 0$ so standard CBF applies. \\
+Outer loop  & RL teacher emits robust-CBF parameters $(\alpha,\varphi,a,c)$ at 50 Hz; closed-form half-space QP outputs $u_{\text{safe}} \in \R^{3}$ ($v_x, v_y, \omega_{\text{yaw}}$); locomotion maps that to 12-D joint targets; output to \texttt{walking\_bridge}. \\
+\bottomrule
+\end{tabularx}
+\end{small}
+
+% =====================================================================
+\section{CBF formulation and four-parameter action space}
+
+Safe-set $h(x)$ is built from per-shape analytical SDFs (cylinders, post-v2.12
+commitment) combined via Eq.~19 multi-obstacle SDF + Eq.~20 exponential
+smoothing $h(p) = \lambda(1 - \exp(-\gamma \cdot \text{sdf}(p)))$; robot footprint
+enters as Minkowski expansion by $0.15$ m. The QP is solved closed-form on GPU
+as a half-space projection. We include the $L_f h$ obstacle-drift term so
+$\dot h$ is correctly accounted for when obstacles move. With
+$\partial h / \partial p_{\text{obs}} = -L_g h$ by symmetry,
+$\dot h = L_g h \cdot u - L_g h \cdot v_{\text{obs}} = L_g h \cdot (u -
+v_{\text{obs}})$, so the constraint becomes:
+\[
+  L_g h \cdot u_{\text{safe}}
+  \;\geq\;
+  -\alpha\,(h - c) \;+\; \varphi \,\lVert L_g h\rVert^{2} \;+\; a
+  \;+\; L_g h \cdot v_{\text{obs}}
+\]
+The teacher emits a 5-D action $(\alpha,\varphi,a,b,c)$, of which 4 are active
+(see table). $b$ is reserved for an input-dependent slack $b\,\lVert u\rVert$
+that would require an SOCP solver; closed-form half-space projection breaks
+otherwise --- deferred.
+
+\begin{small}
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+\toprule
+Param     & Range          & Role \\
+\midrule
+$\alpha$  & $[0.1, 5.0]$   & Class-$\mathcal{K}$ slope on shifted $h(x)-c$; absorbs model / tracking error. \\
+$\varphi$ & $[0.0, 5.0]$   & Coefficient on $\lVert L_g h\rVert^{2}$ (RHS); absorbs actuation uncertainty. \\
+$a$       & $[0.0, 3.0]$   & Additive RHS slack; absorbs state-independent measurement uncertainty. \\
+$c$       & $[0.0, 1.0]$   & Inward shift of safe-set boundary; boundary correction when $h$ underestimates. \\
+\bottomrule
+\end{tabularx}
+\end{small}
+
+% =====================================================================
+\section{Privileged observation}
+
+The teacher conditions on privileged information available in sim but not at
+deploy. A student in Wk3 will reproduce its latent from LiDAR + history.
+
+\begin{small}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Total dimension   & \textbf{8207-D} \\
+Dynamics block    & 15-D --- proprioception, base velocity, COM offset, mass, friction estimate. \\
+Occupancy grid    & 8192-D --- $2 \times 64 \times 64$ ego-centric grid at $0.1$ m resolution, 6.4 m FOV (current frame + previous frame, so the encoder can infer obstacle motion). \\
+\bottomrule
+\end{tabularx}
+\end{small}
+
+% =====================================================================
+\section{Network architecture}
+
+\begin{small}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Encoder         & priv $\to$ CNN [Conv $2{\to}16$ s$=2$, $16{\to}32$ s$=2$, Linear $\to 64$], dyn MLP [$15 \to 64$] $\to$ concat $\to$ Linear $128 \to 12$. \\
+Latent          & $Z \in \R^{12}$ (RMA-style bottleneck; \texttt{get\_z(obs)} exposed for student replay). \\
+Policy          & $\pi_{\text{teacher}}: Z \to (\alpha,\varphi,a,b,c)$, $128$ hidden, output dim $5$, tanh-squash to physical-range scale. \\
+$u_{\text{des}}$ & Never enters the network --- sidecar to the CBF; only used in reward via $\lVert u_{\text{safe}}-u_{\text{des}}\rVert^{2}$. CBF params should depend on environment, not on user's current command. \\
+\bottomrule
+\end{tabularx}
+\end{small}
+
+% =====================================================================
+\section{PPO training recipe}
+
+\begin{small}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Algorithm       & PPO via \texttt{rsl\_rl}, on-policy. \\
+Optimizer       & AdamW, weight\_decay $= 1\mathrm{e}{-5}$. \\
+Entropy coef.\  & $0.005$ (load-bearing --- $0.001$ caused action-std collapse in earlier runs). \\
+Action-rate     & $-0.005 \cdot \lVert \Delta a \rVert^{2}$ in the reward (smooths CBF params in time). \\
+Smoothness story& Orthogonal mechanisms: weight-decay smooths input$\to$output map; action-rate smooths in time. \\
+Episode length  & 20 s. \\
+Parallel envs   & $4096$. \\
+Iterations      & $5000$ ($\sim$5 h on RTX 5090; SPS $\sim$27 K). \\
+Health logging  & 14 CBF stats per iter: 8 = $(\alpha,\varphi,a,c)$ mean/std (slot adaptation); 2 = $h_{\min}, h_{\text{mean}}$ (closeness to obstacle); 2 = QP-active rate, $u_{\text{safe}}$-clamp rate; 2 = noise-$\sigma$ mean/std (DR active). \\
+\bottomrule
+\end{tabularx}
+\end{small}
+
+% =====================================================================
+\section{Reward stack}
+
+\begin{small}
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+\toprule
+Term                            & Weight                                                       & Trigger \\
+\midrule
+\texttt{collision}              & $-100$                                                       & Terminal --- per-shape SDF $< 0$ (obstacle hit). \\
+\texttt{base\_contact\_penalty} & $-100$                                                       & Terminal --- robot fall (matches \texttt{collision} symmetrically). \\
+\texttt{stuck}                  & $-2.0$ / step                                                & Per-step --- when $\lVert v_{xy}\rVert < 0.15$ m/s. \\
+\texttt{infeasibility}          & $-10$ / step                                                 & Per-step --- QP infeasibility marker. \\
+\texttt{u\_safe\_deviation}     & $-0.1\cdot\lVert u_{\text{safe}}-u_{\text{des}}\rVert^{2}$   & Per-step --- penalize CBF deflection of nominal command. \\
+\texttt{proximity}              & $-0.5\cdot\exp(-\text{min\_sdf}/0.5)$                        & Per-step --- distance-shaped pressure away from obstacles. \\
+\texttt{action\_rate}           & $-0.005\cdot\lVert\Delta a\rVert^{2}$                        & Per-step --- smooths $(\alpha,\varphi,a,b,c)$ over time. \\
+\bottomrule
+\end{tabularx}
+\end{small}
+
+\noindent
+\textbf{Design principle: DR-implicit parameter shaping.} No reward terms
+explicitly target $(\alpha, \varphi, a, c)$ behavior. The DR axes provide the
+disturbance; the parameters learn to absorb it. This is the cleaner paper
+claim --- ``DR creates the disturbance, the parameter learns to compensate'' ---
+rather than hand-crafted reward signals per slot.
+
+% =====================================================================
+\section{Domain randomization}
+
+\begin{small}
+\begin{tabularx}{\linewidth}{@{}lXll@{}}
+\toprule
+Axis             & Knob                                  & Train range                      & OOD eval range \\
+\midrule
+Friction         & static / dynamic                      & $(0.30, 1.20)$ / $(0.20, 1.00)$  & $(0.15, 1.50)$ / $(0.10, 1.30)$ \\
+Disturbance      & external force / torque               & $\pm 10$ N / $\pm 2$ Nm          & $\pm 18$ N / $\pm 3.5$ Nm \\
+COM offset       & xy / z                                & $\pm 5$ cm / $\pm 3$ cm          & $\pm 8$ cm / $\pm 5$ cm \\
+Obstacle motion  & per-episode $\lvert v_{\text{obs}}\rvert$ cap & $\sim\mathcal{U}(0, 0.4)$ m/s & up to $0.6$ m/s \\
+Obstacle density & \texttt{separation\_buffer}           & $0.4$ m                          & $0.2$ m \\
+Obstacle pool    & \multicolumn{3}{l}{Cylinder-only (SHIELD-style commitment); $K_{\text{actual}} \in [0, 20]$ unique per reset; radii $0.10$--$0.50$ m.} \\
+Moving obstacles & \multicolumn{3}{l}{$\sim 50\%$ drift constant velocity per episode (random direction), capped by per-episode $v_{\text{obs}}$.} \\
+\bottomrule
+\end{tabularx}
+\end{small}
+
+\noindent
+\textbf{Per-episode persistent perception bias} (load-bearing for the $a$ and
+$c$ slots --- the change that distinguishes the current configuration from
+earlier versions). At each episode reset, every (env, obstacle) draws:
+\[
+  \sigma_e \sim \mathcal{U}(0,\,\sigma_{\max}),
+  \quad \varepsilon_{e,k} \sim \mathcal{N}(0,\,\sigma_e^{2}\,I_2)
+  \;\;(\text{persistent for the episode})
+\]
+The QP sees biased obstacle positions $p_k^{\text{QP}} = p_k +
+\varepsilon_{e,k}$; the priv-obs grid stays clean. Per-episode persistence
+(NOT per-step i.i.d.) is critical: i.i.d.\ noise would average to zero under
+LLN over 1000-step episodes and leave $a$/$c$ with no gradient signal. The
+biased structure matches the temporally-coherent error of a real
+LiDAR-cluster perception pipeline: cf.\ SHIELD (Yang et al.\ 2025,
+arXiv:2505.11494, Section V), where Livox Mid-360 returns are passed
+through Euclidean clustering and each cluster is treated as a cylinder
+of fixed radius $R = 0.3$ m, with cluster-centroid drift between LiDAR
+frames as the dominant perception-error source. Training
+$\sigma_{\max} = 0.05$; OOD env \texttt{Isaac-CBF-Go2-NoisyPerception-v0}
+uses $\sigma_{\max} = 0.10$ to test the $a$ slot at deploy stress.
+
+% =====================================================================
+\section{Multi-planner training mix}
+
+The teacher trains against a mixture of nominal commands (this is what the
+locomotion controller would see at deployment):
+
+\begin{small}
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+Planner                     & Share & Behavior \\
+\midrule
+\texttt{smooth\_goal}        & $0.40$ & Smoothed goal-direction velocity command (most common deploy case). \\
+\texttt{waypoint}            & $0.25$ & A*-style waypoint chasing through clutter. \\
+\texttt{mpc}                 & $0.20$ & MPC-like receding-horizon planner. \\
+\texttt{legacy\_goal}        & $0.05$ & Plain goal-direction. \\
+\texttt{walk}                & $0.05$ & Constant forward walk (open-space behavior). \\
+\texttt{adversarial}         & $0.05$ & Random-direction commands (regularizer). \\
+\bottomrule
+\end{tabularx}
+\end{small}
+
+\noindent
+\textbf{Bimodal resample DR.} Each episode rolls $P=0.5 \to$ planner
+re-samples every $\mathcal{U}(5,15)$ s (mid-switch); $P=0.5 \to$ planner
+locked for the full $100$ s episode. \textbf{Eval is always locked
+(deploy-realistic).} The training/eval mismatch is the design point:
+training mid-switch teaches intrinsic recovery from CBF deflection; locked
+eval verifies that recovery transfers to a single deployed nav stack.
+
+\noindent
+\textbf{All planners rate-limited, MPC re-derived (2026-05-08).} Every
+planner emits commanded $v_{xy}$ subject to $\lVert \Delta v \rVert \leq
+\text{max\_accel} \cdot dt$ ($\text{max\_accel} = 2.0$ m/s$^{2}$), so
+nominal commands cannot step-discontinuously and create
+artificial-tracking-error stress on the locomotion controller. MPC was
+additionally re-tuned ($K_p = 2.5$, $K_d = 0$) after solo-planner
+bisection (Section~9) showed its prior PD-for-double-integrator law was
+the dominant K{=}0 stuck contributor.
+
+% =====================================================================
+\section{Failure-rate layering}
+
+Where do the absolute fall and stuck numbers come from? We isolate by running
+a \texttt{--no\_obstacles} diagnostic ($K_{\text{actual}}=0$ at eval), then
+bisect further with \texttt{--solo\_planner} to attribute per-planner
+contribution. This bisection caught a hidden MPC-planner bug that had been
+silently inflating absolute numbers across all v2.6--v2.11 runs.
+
+\begin{small}
+\begin{tabularx}{\linewidth}{@{}Xcc@{}}
+\toprule
+Cumulative layer                                                                   & Fall        & Stuck       \\
+\midrule
+Native locomotion in its own flat-velocity training task                           & $0.5\%$     & ---         \\
+$+$ our env (50 Hz, full DR), $K{=}0$, vanilla \texttt{UniformVelocityCommand}     & $2.9\%$     & $5.7\%$     \\
+$+$ multi-planner mix (rate-limited, MPC fixed)                                    & $1.8\%$     & $6.5\%$     \\
+$+$ obstacles $+$ plain hand-tuned CBF baseline (B0)                               & $\sim 20\%$ & $\sim 17\%$ \\
+\bottomrule
+\end{tabularx}
+\end{small}
+
+\begin{itemize}
+  \item \textbf{$0.5\% \to 2.9\%$ fall jump.} Cost of our DR $+$ 50 Hz command streaming on locomotion alone, before any obstacle exists. This is the locomotion floor.
+  \item \textbf{Multi-planner mix adds essentially zero floor.} Combined $8.3\%$ (mix) vs.\ $8.6\%$ (vanilla) is statistically indistinguishable. The 6-planner mix is no longer a confound for absolute numbers.
+  \item \textbf{Hidden MPC bug fixed (2026-05-08).} The previously-reported $16.5\%$ stuck floor was \emph{not} a goal-reached artifact (as I had assumed). Solo-planner bisection traced it to an MPC math error: a PD-for-double-integrator control law $u = K_p\,(p_{\text{goal}} - p) - K_d\,v$ with $K_p = 0.5$, $K_d = 0.5$, used as a velocity command (not an acceleration). $K_p = 0.5$ together with the $1.2$ m/s velocity cap produced a $2.4$ m deceleration zone (cap $\div K_p$); the robot crawled for most of every goal-approach. $K_d \neq 0$ added oscillation near goal. Fix: $K_p = 2.5$ (decel zone $\to 0.48$ m), $K_d = 0$, rate-limit on all 6 planners (\texttt{max\_accel} $= 2.0$ m/s$^{2}$). Solo-MPC stuck collapsed $44.4\% \to 5.4\%$; full-mix stuck collapsed $16.9\% \to 6.5\%$.
+  \item \textbf{CBF-attributable piece.} The residual once locomotion $+$ DR floors are subtracted --- what the teacher actually targets while preserving the forward-invariance guarantee on contact.
+\end{itemize}
+
+% =====================================================================
+\section{Evaluation protocol}
+
+\textbf{Baselines.} \;
+\textbf{B0:} fixed $(\alpha,\varphi,a,b,c) = (0.5, 0, 0, 0, 0)$ --- plain CBF,
+no robust slacks. \;
+\textbf{B1:} B0 with tuned $\varphi \in \{0.5, 1.5, 3.0\}$ --- ISSf form. \;
+\textbf{B2:} TISSf form, varying $(\alpha, \varepsilon_0, \lambda)$. \;
+All baselines hand-tuned over a $24$-config grid; reported = best per task.
+
+\noindent
+\textbf{B-fixed-X ablations} (paper Table 2): at eval time only, clamp ONE
+slot to a fixed value (mean of training-time output for that slot); the other
+3 stay adaptive. Tests whether per-slot adaptation is load-bearing on each OOD
+axis: \emph{Bf-$\alpha$} on DensePack/in-dist, \emph{Bf-$\varphi$} on
+HighDisturbance, \emph{Bf-a} on NoisyPerception, \emph{Bf-c} on HeavyCOM /
+FastObstacles.
+
+\noindent
+\textbf{Metric.} Combined fall + stuck rate (lower is better). $64$ envs per
+config $\times$ $2000$ sim steps $\approx 150$ episodes per row; same
+\texttt{--num\_envs}, \texttt{--steps\_per\_config}, seeded RNG across configs.
+
+% =====================================================================
+\section{Headline result --- validated baseline}
+
+Trained teacher vs.\ a 24-config sweep of plain, ISSf, and TISSf hand-tuned
+baselines. Margin = BR (best response, ours) $-$ best hand-tuned baseline,
+combined fall + stuck (lower is better).
+
+\begin{small}
+\begin{tabularx}{\linewidth}{@{}lXl@{}}
+\toprule
+Eval                & Type                                         & Margin (BR vs.\ best baseline) \\
+\midrule
+In-distribution     & mixed                                        & \textbf{+6.9 pp WIN} \\
+Slippery            & priv-obs (continuous friction shift)         & \textbf{+5.6 pp WIN} \\
+HighDisturbance     & priv-obs (episodic force / torque)           & \textbf{+9.0 pp WIN} \\
+FastObstacles       & priv-obs (grid history)                      & \textbf{+10.6 pp WIN} \\
+HeavyCOM            & priv-obs (startup COM bias)                  & \textbf{+5.9 pp WIN} \\
+DensePack           & scene-only ($h(x)$ symmetric)                & $+0.6$ pp tie \\
+RealisticCompound   & all 5 modest pushes simultaneously           & $-0.3$ pp tie \\
+\bottomrule
+\end{tabularx}
+\end{small}
+
+\noindent
+Average single-axis margin $+6.4$ pp ($5$ wins, $1$ scene-only tie, $1$
+compositional tie). Pattern: the teacher wins on every OOD axis where it has
+asymmetric privileged information (friction, force, COM, velocity history);
+ties where the playing field is symmetric (DensePack --- same $h(x)$ for both
+methods) or compositional.
+
+\noindent
+\textbf{Status note (updated 2026-05-09).} v2.12 finished training and
+the 8-eval landed: $3$W$/1$T$/4$L, average margin $+0.17$ pp. In-dist
+($+7.05$), NoisyPerception ($+5.51$), FastObstacles ($+7.05$) are
+clean wins; DensePack/Slippery/HighDist/Compound regressed vs v2.6.
+Headline finding from B-fixed-X ablations: \textbf{Bf-$a$ on
+NoisyPerception = $+44.1$ pp degradation} --- fixing $a$ to its mean
+breaks performance on perception-noisy environments by $44$ pp combined.
+The $a$ slot is genuinely load-bearing despite a small training-time
+mean ($\approx 0.05$); the policy uses it in spike-mode when episode
+$\sigma_e$ is large. Strong validation of the four-parameter architecture.
+
+% =====================================================================
+\section{Two findings driving v2.14}
+
+The session also surfaced two architecturally-meaningful findings.
+
+\noindent
+\textbf{Finding 1 --- per-step $\varphi$ output is jitter, not adaptation.}
+B-fixed-$\varphi$ on HighDisturbance INVERTED: clamping $\varphi$ to its
+mean BEAT the per-step adaptive policy by $7.6$ pp combined. Diagnosis
+(framed by my mathematical advisor's catch): per-step Gaussian sampling
+on the $\varphi$ output is the same LLN/CLT-style failure mode we fixed
+on the input side for perception-bias DR. PPO's advantage averages
+reward over the $\sim 800$-step episode, so any single $\varphi_t$
+contributes $\sim 1/800$ to the return $\Rightarrow$ no usable
+gradient signal for state-conditional $\varphi$ $\Rightarrow$ policy
+converges to "noisy mean." B-fixed-$\varphi$ replicates the mean
+without the per-step noise, hence the inversion.
+
+The structural root: $\varphi$ scales the actuation-uncertainty robust
+term $\varphi \lVert L_g h \rVert^2$. Actuation uncertainty is an
+\textbf{environment-class} property (motor lag, friction, locomotion
+tracking error --- stable across an episode), not a state-conditional
+one. Per-step adaptation has no useful target.
+
+Symmetric fix: lock $\varphi$ once at episode start, replay for the
+remainder of the episode. The Gaussian exploration noise that was on
+$\varphi_t$ at reset stays in (now between-episode); the per-step
+jitter that was poisoning the constraint is removed. Predicted v2.14
+outcome: B-fixed-$\varphi$ on HighDist swaps from $-7.6$ to positive.
+
+\noindent
+\textbf{Finding 2 --- the SHIELD-perception gap.} I evaluated the v2.12
+checkpoint under the deploy-realistic SHIELD perception pipeline (QP
+sees uniform $R = 0.3$ m cylinders for every obstacle, regardless of
+true radius --- exactly Yang et al.\ 2025 Sec~V). The BR margin
+flipped from $+7.05$ (priv perception) to $-3.5$ pp (SHIELD), a
+$10.5$ pp swing. Mechanism: BR's outputs are calibrated for the QP
+knowing the true radii; under SHIELD, the QP under-pads big obstacles
+($R = 0.50$ m treated as $R = 0.3$ m) producing $+6$ pp falls.
+Importantly, the baselines actually IMPROVED under SHIELD ($-7.2$ pp
+combined) because their fixed parameters were already calibrated for
+"the average obstacle" --- which is what uniform $R = 0.3$ m
+approximates.
+
+Implication: the v2.12 architecture's win depends on the QP knowing
+true geometry, which is not available at deploy time on real LiDAR.
+Need to train UNDER SHIELD perception so the policy learns to
+compensate for the $R = 0.3$ m QP assumption.
+
+\noindent
+\textbf{v2.14 spec.} Both findings folded into a single training run
+launching next ($\sim 5$ h train + $\sim 5$ h eval). Two fixes
+relative to v2.12:
+\begin{itemize}
+  \item \textbf{Per-episode $\varphi$ lock} (capture once, replay; matches the v2.12 perception-bias persistence on the input side).
+  \item \textbf{Train under SHIELD-style perception} (\texttt{perception\_mode = "shield\_v0a"}: ground-truth positions, uniform $R = 0.3$ m cylinders).
+\end{itemize}
+
+The two fixes are architecturally orthogonal and both have predicted
+gain. Successful v2.14 produces a deployment-realistic adaptive CBF
+with all four slots load-bearing under realistic perception ---
+a stronger result than v2.6 / v2.12 because the win number now
+corresponds to the deployment perception model, not the privileged
+training one.
+
+\end{document}

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>v3.2 Architecture — Go2 CBF teacher</title>
+<style>
+  :root {
+    --bg: #0e1116;
+    --fg: #e6edf3;
+    --muted: #9da7b3;
+    --priv: #6cc6ff;
+    --grid: #87f0a7;
+    --policy: #ffd76b;
+    --cbf: #ff8b6e;
+    --hidden: #7a8290;
+    --warn: #ff5c8a;
+    --good: #67d97c;
+    --border: #30363d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 32px 0 12px; color: var(--muted); font-weight: 600; }
+  .sub { color: var(--muted); margin-bottom: 24px; }
+
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+  .row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .box {
+    background: #161b22;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    min-width: 160px;
+    text-align: center;
+    position: relative;
+  }
+  .box .title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .box .dim { color: var(--muted); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  .box .note { color: var(--muted); font-size: 11px; margin-top: 4px; }
+
+  .priv  { border-color: var(--priv); }
+  .priv  .title { color: var(--priv); }
+  .grid  { border-color: var(--grid); }
+  .grid  .title { color: var(--grid); }
+  .policy { border-color: var(--policy); }
+  .policy .title { color: var(--policy); }
+  .cbf   { border-color: var(--cbf); }
+  .cbf   .title { color: var(--cbf); }
+  .hidden { border-color: var(--hidden); border-style: dashed; opacity: 0.5; }
+  .hidden .title { color: var(--hidden); }
+
+  .arrow {
+    color: var(--muted);
+    font-family: ui-monospace, monospace;
+    line-height: 1;
+    margin: 4px 0;
+    font-size: 22px;
+  }
+  .label-arrow {
+    color: var(--muted);
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    text-align: center;
+    padding: 2px 8px;
+    border-left: 2px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    margin: 4px auto;
+  }
+
+  .panel {
+    background: #161b22;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+  }
+  .panel h3 { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: ui-monospace, monospace;
+    margin-right: 6px;
+  }
+  .tag.priv   { background: rgba(108,198,255,0.15); color: var(--priv); }
+  .tag.grid   { background: rgba(135,240,167,0.15); color: var(--grid); }
+  .tag.policy { background: rgba(255,215,107,0.15); color: var(--policy); }
+  .tag.cbf    { background: rgba(255,139,110,0.15); color: var(--cbf); }
+  .tag.off    { background: rgba(122,130,144,0.15); color: var(--hidden); text-decoration: line-through; }
+  .tag.on     { background: rgba(103,217,124,0.15); color: var(--good); }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 8px 0;
+    font-size: 13px;
+  }
+  th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; }
+  td code { background: rgba(255,255,255,0.05); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+    font-size: 12px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 12px; height: 12px; border-radius: 2px; border: 1px solid; }
+
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  .narrative {
+    color: var(--fg);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .narrative code {
+    background: rgba(255,255,255,0.05);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+
+  .asymmetry {
+    border: 1px solid var(--warn);
+    background: rgba(255,92,138,0.06);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .asymmetry .title { color: var(--warn); font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Go2 CBF teacher — v3.2 architecture</h1>
+  <div class="sub">RMA-style split encoders + adversarial-heavy training + FOV-gated CBF</div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="swatch" style="border-color:var(--priv)"></div> Privileged path (sim-only at train, student approximates at deploy)</div>
+    <div class="legend-item"><div class="swatch" style="border-color:var(--grid)"></div> Perception path (LiDAR, available at deploy)</div>
+    <div class="legend-item"><div class="swatch" style="border-color:var(--policy)"></div> Policy</div>
+    <div class="legend-item"><div class="swatch" style="border-color:var(--cbf)"></div> Safety filter (CBF QP)</div>
+  </div>
+
+  <!-- ────────────────────────────────────────────────── -->
+  <h2>Inference dataflow (every step)</h2>
+
+  <div class="flow">
+    <!-- INPUT row -->
+    <div class="row">
+      <div class="box priv">
+        <div class="title">PRIV + PROPRIO-ISH FEATURES</div>
+        <div class="dim">15 dims</div>
+        <div class="note">
+          <strong>env class:</strong> friction, base_mass, COM×3<br>
+          <strong>proprio-ish:</strong> base_height (z), tracking_err×3<br>
+          <strong>disturbance:</strong> applied_force×3, applied_torque×3<br>
+          <i>no joint-level proprio (lives in locomotion layer)</i>
+        </div>
+      </div>
+      <div class="box grid">
+        <div class="title">OCCUPANCY GRID</div>
+        <div class="dim">2 × 64 × 64</div>
+        <div class="note">body-frame ±3.2 m<br>current + previous frame</div>
+      </div>
+    </div>
+
+    <div class="arrow">↓ &nbsp; &nbsp; &nbsp; ↓</div>
+
+    <!-- ENCODER row -->
+    <div class="row">
+      <div class="box priv">
+        <div class="title">priv_encoder</div>
+        <div class="dim">MLP 15 → 64 → 64 → 8</div>
+        <div class="note">env-class compressor</div>
+      </div>
+      <div class="box grid">
+        <div class="title">grid_CNN</div>
+        <div class="dim">2×64² → conv → 64</div>
+        <div class="note">perception compressor</div>
+      </div>
+    </div>
+
+    <div class="arrow">↓ &nbsp; &nbsp; &nbsp; ↓</div>
+
+    <!-- BOTTLENECK row -->
+    <div class="row">
+      <div class="box priv"><div class="title">z_priv</div><div class="dim">8 D</div></div>
+      <div class="box grid"><div class="title">z_grid</div><div class="dim">64 D</div></div>
+    </div>
+
+    <div class="label-arrow">concat → 72 D</div>
+
+    <!-- POLICY -->
+    <div class="row">
+      <div class="box policy">
+        <div class="title">π_teacher</div>
+        <div class="dim">MLP 72 → 128 → 128 → 5</div>
+        <div class="note">stochastic Gaussian, joint-RL trained</div>
+      </div>
+    </div>
+
+    <div class="label-arrow">5-dim action: (α, φ, a, b, c)<br>Layer 1: only α active</div>
+
+    <!-- CBF QP -->
+    <div class="row">
+      <div class="box cbf">
+        <div class="title">CBF QP</div>
+        <div class="dim">min ‖u − u_des‖²<br>s.t. L<sub>g</sub>h·u + α·h ≥ 0</div>
+        <div class="note"><strong>FOV-gated:</strong> obstacles &gt; 3.2 m invisible<br>(perception_mode = priv_fov)</div>
+      </div>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="row">
+      <div class="box" style="border-color: var(--good)"><div class="title">u_safe (body-frame velocity command)</div><div class="dim">3 D: vx, vy, ω_yaw</div></div>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <!-- LOCOMOTION LAYER — frozen pre-trained walking policy -->
+    <div class="row">
+      <div class="box" style="min-width: 340px; border-color: var(--muted);">
+        <div class="title" style="color: var(--fg);">LOCOMOTION CONTROLLER</div>
+        <div class="dim">pre-trained, FROZEN, separate network</div>
+        <div class="note" style="text-align: left; margin-top: 8px;">
+          <strong>Inputs:</strong> u_safe + <strong>full proprio</strong>:<br>
+          &nbsp;&nbsp;• joint_pos × 12<br>
+          &nbsp;&nbsp;• joint_vel × 12<br>
+          &nbsp;&nbsp;• base_lin_vel × 3, base_ang_vel × 3<br>
+          &nbsp;&nbsp;• projected_gravity × 3 (IMU)<br>
+          &nbsp;&nbsp;• last_actions × 12<br>
+          <strong>Output:</strong> joint torques × 12 (~50 Hz)<br>
+          <i>This is where joint-level control lives — NOT in the teacher.</i>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="row">
+      <div class="box" style="border-color: var(--good)"><div class="title">ROBOT</div><div class="note">Go2 quadruped (sim / real)</div></div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────────────────────── -->
+  <h2>Two-level hierarchy</h2>
+
+  <div class="panel narrative">
+    <p>The system has <strong>two distinct policies</strong> stacked. Don't confuse them.</p>
+    <table>
+      <tr><th>Layer</th><th>Inputs</th><th>Output</th><th>Status</th></tr>
+      <tr>
+        <td><strong>Teacher (we train this)</strong></td>
+        <td>env class (priv), grid, height, tracking_err</td>
+        <td>CBF params (α, …)</td>
+        <td>active training (~50 Hz)</td>
+      </tr>
+      <tr>
+        <td>Locomotion controller</td>
+        <td>u_safe + <strong>full proprio</strong> (joints, IMU, body vel)</td>
+        <td>joint torques</td>
+        <td>pre-trained, frozen</td>
+      </tr>
+    </table>
+    <p>The teacher's role is parameter selection — "given the situation, how aggressive should the safety filter be?" It doesn't need joint angles for that. Joint-level state belongs to the locomotion layer, which is a solved problem (Unitree Go2 flat velocity tracking) treated as a frozen black box.</p>
+    <p>When you see <code>tracking_err</code> in the teacher's priv input, that's the locomotion layer "reporting up" how well it tracked the last command. The teacher uses it as a coarse "am I keeping up?" signal — useful for setting α when the lower controller is struggling (slippery floor, heavy load) without needing the full proprio stack.</p>
+  </div>
+
+  <!-- ────────────────────────────────────────────────── -->
+  <h2>Where u_des comes from (training)</h2>
+
+  <div class="panel">
+    <table>
+      <tr><th>Planner</th><th>Weight</th><th>Behavior</th></tr>
+      <tr><td><strong>Adversarial</strong></td><td><code>45%</code></td><td>argmins SDF over all obstacles (uses GLOBAL truth) + per-ep angular offset ±28° + speed 0.4–1.2 m/s. Drives robot at obstacles with attack-geometry diversity.</td></tr>
+      <tr><td>Smooth GOAL</td><td><code>25%</code></td><td>Rate-limited goal pursuit, cooperative</td></tr>
+      <tr><td>Waypoint A*</td><td><code>15%</code></td><td>Multi-waypoint path</td></tr>
+      <tr><td>MPC-like</td><td><code>10%</code></td><td>Decelerates near goal</td></tr>
+      <tr><td>Walk</td><td><code>5%</code></td><td>Jerky teleop-like</td></tr>
+    </table>
+  </div>
+
+  <div class="asymmetry">
+    <div class="title">→ Intended asymmetry</div>
+    The adversarial planner uses <strong>global ground-truth</strong> obstacle positions to choose where to drive. The CBF QP and the policy are both <strong>FOV-limited</strong> (3.2 m). So the "evil driver" knows about everything; the car's safety system only sees what its LiDAR sees. Matches the AI-car narrative: planner picks dangerous commands, robot has to defend with limited perception.
+  </div>
+
+  <!-- ────────────────────────────────────────────────── -->
+  <h2>Training signals on α</h2>
+
+  <div class="panel">
+    <table>
+      <tr><th>Signal</th><th>Status</th><th>Direction</th><th>Density</th></tr>
+      <tr><td><code>softplus(-slack)</code> aux loss</td><td><span class="tag off">AUX_COEF = 0</span></td><td>—</td><td>—</td></tr>
+      <tr><td><code>velocity_along_cmd</code></td><td><span class="tag off">weight = 0</span></td><td>—</td><td>—</td></tr>
+      <tr><td><code>cbf_lhs_margin</code></td><td><span class="tag on">−0.1</span></td><td>pulls α down (don't over-conserve)</td><td>dense, per step</td></tr>
+      <tr><td><code>collision</code></td><td><span class="tag on">−100</span></td><td>pulls α down (less aggressive)</td><td>sparse, on-event</td></tr>
+      <tr><td><code>base_contact</code></td><td><span class="tag on">−500</span></td><td>pulls α down</td><td>sparse, on-event</td></tr>
+      <tr><td><code>stuck</code></td><td><span class="tag on">−1 / step</span></td><td>pulls α up (keep moving)</td><td>dense, per step</td></tr>
+      <tr><td><code>proximity</code></td><td><span class="tag on">−0.5</span></td><td>pulls α down (stay away)</td><td>dense, per step</td></tr>
+      <tr><td><code>action_rate</code></td><td><span class="tag on">−0.005</span></td><td>smooths action choices</td><td>dense, per step</td></tr>
+      <tr><td>PPO surrogate (over u_safe)</td><td><span class="tag on">on</span></td><td>state-conditional</td><td>only when QP fires (dense in v3.2 thanks to 45% adv)</td></tr>
+    </table>
+  </div>
+
+  <!-- ────────────────────────────────────────────────── -->
+  <h2>Deployment path (Phase 2, Wk3)</h2>
+
+  <div class="flow">
+    <div class="row">
+      <div class="box hidden"><div class="title">priv vector</div><div class="dim">NOT AVAILABLE on real robot</div></div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="row">
+      <div class="box priv">
+        <div class="title">student_encoder (NEW for deploy)</div>
+        <div class="dim">history(state, action) → z_priv_hat</div>
+        <div class="note">trained via MSE to match teacher's z_priv</div>
+      </div>
+      <div class="box grid">
+        <div class="title">grid_CNN (frozen from teacher)</div>
+        <div class="dim">unchanged</div>
+      </div>
+    </div>
+    <div class="label-arrow">concat (z_priv_hat + z_grid)</div>
+    <div class="row">
+      <div class="box policy"><div class="title">π_teacher (frozen from teacher)</div><div class="dim">unchanged</div></div>
+    </div>
+    <div class="row">
+      <div class="box cbf"><div class="title">CBF QP (deploy-realistic h)</div><div class="dim">LiDAR-derived obstacles only</div></div>
+    </div>
+  </div>
+
+  <div class="narrative" style="margin-top: 16px;">
+    <p>Only the <strong>priv encoder</strong> changes between teacher and student. Grid CNN, policy MLP, and CBF QP transfer unchanged. The sim-to-real gap is isolated to one small regressor whose job is "infer env class from (state, action) history."</p>
+  </div>
+
+  <!-- ────────────────────────────────────────────────── -->
+  <h2>Why this architecture</h2>
+
+  <div class="panel narrative">
+    <p><strong>v3.0a-d failure mode:</strong> monolithic encoder. Grid CNN (~530k params, per-step signal) dominated PPO gradient credit, starved dyn path (~1.3k params, per-episode signal). Z encoded geometry, ignored env class.</p>
+    <p><strong>v3.0e/f failure mode:</strong> even with pretrained encoder, policy saturated at α=5 because reward stack + aux loss + velocity reward all pushed α up, only sparse fall penalty pulled down. Aux loss self-silenced when slack stayed positive.</p>
+    <p><strong>v3.2 design response:</strong></p>
+    <ul>
+      <li><strong>Split bottlenecks</strong> — z_priv and z_grid don't share parameters. No gradient-credit competition. Each path trains on its own signal.</li>
+      <li><strong>cbf_state out of policy</strong> — no shortcut. α must be inferred from env class (z_priv) + raw perception (z_grid), not derived CBF features.</li>
+      <li><strong>AUX_COEF = 0</strong> — removes the self-silencing aux loss. Saturation pressure is gone; signal density comes from data instead.</li>
+      <li><strong>45% adversarial + FOV-gated CBF</strong> — makes friction/mass action-relevant. Policy must encode env class to set α correctly. The data carries the gradient that aux loss was failing to provide.</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,94 @@
+{
+  "task": "Isaac-CBF-Go2-RMA-Layer3-TwoStream-V13-v0",
+  "checkpoint": "logs/rsl_rl/cbf_go2_teacher_rma/2026-05-20_15-31-52/model_2499.pt",
+  "n_envs": 256,
+  "n_rollout_steps": 100,
+  "alpha_population_mean": 2.078059196472168,
+  "alpha_population_std": 0.2774237394332886,
+  "alpha_within_env_std_mean": 0.6077723503112793,
+  "correlations_with_alpha": {
+    "friction": -0.0083,
+    "base_mass": -0.0902,
+    "base_height": 0.3494,
+    "actuation_noise_sigma": -0.1152,
+    "|applied_force|": 0.0554,
+    "|applied_torque|": 0.0667,
+    "|tracking_err|": 0.2797,
+    "|com_offset|": -0.0432,
+    "com_x": 0.0506,
+    "com_y": -0.0656,
+    "com_z": 0.0345
+  },
+  "within_episode_pearson_with_alpha": {
+    "|tracking_err|": {
+      "mean": 0.1055,
+      "std": 0.2849,
+      "n_valid_envs": 256
+    },
+    "|base_ang_vel|": {
+      "mean": 0.0068,
+      "std": 0.1916,
+      "n_valid_envs": 256
+    },
+    "actuation_noise_sigma": {
+      "mean": -0.0045,
+      "std": 0.1401,
+      "n_valid_envs": 255
+    },
+    "h": {
+      "mean": 0.0944,
+      "std": 0.3137,
+      "n_valid_envs": 250
+    }
+  },
+  "feature_distributions": {
+    "friction": {
+      "mean": 0.7007,
+      "std": 0.2535,
+      "min": 0.3146,
+      "max": 1.183
+    },
+    "base_mass": {
+      "mean": 0.9642,
+      "std": 1.1707,
+      "min": -0.9728,
+      "max": 2.9588
+    },
+    "base_height": {
+      "mean": 0.2138,
+      "std": 0.0245,
+      "min": 0.1617,
+      "max": 0.28
+    },
+    "actuation_noise_sigma": {
+      "mean": 0.0147,
+      "std": 0.008,
+      "min": 0.0006,
+      "max": 0.0293
+    },
+    "|applied_force|": {
+      "mean": 9.5711,
+      "std": 2.8572,
+      "min": 0.4813,
+      "max": 16.8935
+    },
+    "|applied_torque|": {
+      "mean": 1.9024,
+      "std": 0.5462,
+      "min": 0.2218,
+      "max": 3.3488
+    },
+    "|tracking_err|": {
+      "mean": 0.5337,
+      "std": 0.4029,
+      "min": 0.0708,
+      "max": 2.1187
+    },
+    "|com_offset|": {
+      "mean": 0.0423,
+      "std": 0.0132,
+      "min": 0.0067,
+      "max": 0.073
+    }
+  }
+}

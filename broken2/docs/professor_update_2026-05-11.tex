@@ -1,0 +1,103 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage[margin=1in]{geometry}
+\usepackage{parskip}
+
+\title{Professor Update}
+\author{Chris Liang}
+\date{2026-05-11}
+
+\begin{document}
+\maketitle
+
+\section*{Headline}
+
+Layer 1 ($\alpha$-only adaptive CBF) reached its ceiling. $\alpha$ adapts cleanly to local CBF geometry but has no gradient path to environment class. Moving to Layer 2: release $\phi$ + actuation-noise DR, where the physical lever and the randomization axis line up.
+
+\section*{Setup recap}
+
+\begin{itemize}
+\item Two-level: teacher PPO outputs CBF params, frozen locomotion controller below, hard CBF half-space projection between them.
+\item RMA-style split encoder (Kumar et al.): privileged DR features $\to z_{\text{priv}}$ (16-dim MLP), local occupancy grid $\to z_{\text{grid}}$ (CNN). \texttt{cbf\_state} routed to value head only, not policy input.
+\item Released params currently: $\alpha$ only. Hand-coded defaults for $\phi$, $a$, $b$, $c$.
+\item Headline metric: combined fall + stuck rate. Win = released-param adaptive beats best-fixed-$\alpha$ by $\geq 3$pp on $\geq 1$ task.
+\item Adaptation diagnostic: $\text{Pearson}(\alpha, \text{DR feature}) > 0.20$ within distribution.
+\end{itemize}
+
+\section*{Diagnostic chain (Layer 1)}
+
+v3.0a--d failed with monolithic CNN (encoder collapse --- grid path starved dyn path for gradient). v3.0e--f tried pretrain+freeze + analytical aux loss, but $\alpha$ saturated at 5.0 with $\sigma=0$. v3.1 onward used RMA split.
+
+\begin{center}
+\begin{tabular}{@{}l p{2.5in} l l l@{}}
+\toprule
+Run & Key change & $\alpha\ \mu/\sigma$ & $\max |r_{\text{DR}}|$ & HeavyCOM $\Delta$comb \\
+\midrule
+v3.1   & RMA split + AUX=0.005 + drop \texttt{v\_along\_cmd} + no \texttt{cbf\_state} in policy & 4.0 / 1.5  & 0.008 & tie \\
+v3.2   & + 45\% adversarial + grazing $28^\circ$ + \texttt{priv\_fov} + AUX=0                  & 3.05 / 1.96 & $<0.10$ & $+3.01$pp \\
+v3.2.1 & + $z_{\text{priv}}: 8 \to 16$ (capacity test)                                           & 3.27 / 1.91 & 0.063 & $-0.15$pp \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{What v3.2.1 settled}
+
+\begin{itemize}
+\item \textbf{Encoder capacity is not the bottleneck.} Doubling $z_{\text{priv}}$ left DR correlations essentially unchanged.
+\item \textbf{v3.2's HeavyCOM $+3.01$pp did not replicate.} Re-train collapsed it to noise. Not load-bearing.
+\item \textbf{$\alpha$ correlates strongly with CBF state across all runs}: $\text{slack}\ r=+0.84$, $h\ r=+0.71$, $\|L_g h\|^2\ r=-0.66$.
+\item \textbf{DR correlations stay at $|r| < 0.07$} regardless of architecture, encoder capacity, or training distribution.
+\end{itemize}
+
+$\alpha$ is geometry-reactive: it ramps up as the CBF QP approaches activation and ramps down in open space. It does not distinguish episodes by friction, mass, COM offset, or applied disturbance magnitude.
+
+\section*{Why $\alpha$ has no env-class gradient path}
+
+The dense reward term \texttt{cbf\_lhs\_margin}$=-0.1$ penalizes negative slack ($= L_g h \cdot u_{\text{des}} + \alpha h$), and $\alpha h$ is the policy's direct lever on it. That's the proximate cause of the geometry coupling --- and it's the same term that broke v3.0f's saturation, so it's the signal carrier we want to keep, not the obstacle.
+
+Deeper structural reason: $\alpha$ scales the $h$-recovery rate. The DR axes (friction, mass, COM) act on the robot through slip dynamics or inertia, all routed through the frozen locomotion controller. There is no control path from $\alpha$ to those dynamics. Even with perfect credit assignment, the friction-optimal $\alpha$ isn't meaningfully different from the high-friction-optimal $\alpha$, because ``am I about to hit'' dominates ``how slippery is the floor'' in the QP's loss landscape.
+
+Read: this is a parameter-vs-DR-axis mismatch, not a training failure. No amount of encoder tuning or reward shaping fixes it. The fix is to pair each released parameter with a DR axis whose physics it actually touches.
+
+\section*{Layer 2 plan (launching today)}
+
+Release $\phi$ alongside $\alpha$. CBF QP rhs:
+\begin{equation}
+\text{rhs} \;=\; -\alpha(h - c) \;+\; \phi \,\|L_g h\|^2 \;+\; a
+\end{equation}
+
+$\phi$ multiplies $\|L_g h\|^2$ --- this is Kolathaya's ISSf input-disturbance margin term. It has a clean physical match to \textbf{actuation noise}: both are about $L_g h$ estimate uncertainty.
+
+\begin{itemize}
+\item Add \texttt{actuation\_noise\_sigma} to teacher priv obs (\texttt{priv\_dim}: $15 \to 16$).
+\item Widen actuation noise DR: $\sigma_{\max}: 0.10 \to 0.20$.
+\item Hold Layer 1 setup constant otherwise (RMA arch, adversarial planner, AUX=0, \texttt{priv\_fov}, lhs reward).
+\item New OOD eval task: high-noise ($\sigma_{\max}=0.30$) to test $\phi$ adaptation transfer.
+\end{itemize}
+
+Layer 2 PASS criterion: $\text{Pearson}(\phi, \texttt{actuation\_noise\_sigma}) > 0.20$, combined-metric win $\geq 3$pp on $\geq 1$ task (in-dist or high-noise), Layer 1 geometry behavior on $\alpha$ preserved.
+
+If Layer 2 also fails: Layer 3 (release $a$ + perception-noise DR), Layer 4 (release $c$ + radius-error DR). If all fail, revisit whether the per-step-adaptive-param framing is viable at all and pivot toward per-episode adaptation only.
+
+\section*{Open questions}
+
+\begin{enumerate}
+\item \textbf{Is the ``$\alpha$ has no lever on slip/inertia'' argument sound?} My read is that under hard CBF projection with a frozen locomotion controller below, $\alpha$'s gradient path to friction/mass DR axes is structurally absent --- not just hard to find. If you'd push back, would value the pointer.
+\item \textbf{$\phi \leftrightarrow$ actuation noise pairing} --- picked this because it's the cleanest $L_g h$ uncertainty proxy. Alternatives considered: motor strength DR, contact stiffness DR. Reasonable, or is there a better one?
+\item \textbf{What claim Layer 2 results would best support} --- would rather align with you on framing before writing than after.
+\end{enumerate}
+
+\section*{Status}
+
+\begin{itemize}
+\item v3.2.1 done. Layer 2 fully drafted locally, syncing to lab today ($\sim$12h pipeline).
+\item Hardware deploy on Go2 still on track for late May.
+\item All diagnostic tools (linear probe, $\alpha$-corr, $Z$ health) running per-version, artifacts archived per run.
+\end{itemize}
+
+\end{document}

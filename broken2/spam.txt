@@ -1,0 +1,66 @@
+Methodology deep-dive while v21 trains — how to train parameters to their theoretical roles
+
+I want to walk you through some thinking we did about the bigger methodology picture. None of this is urgent — depends entirely on what v21 produces — but the reasoning matters for Wk3 when we release a and c.
+
+The observation:
+
+Across v18, v19, v20, the φ-σ coupling never emerged:
+
+v18	v19	v20
+Pearson(φ, σ_actuation)	−0.026	+0.043	+0.053
+Pearson(φ, grid_change)	+0.30	−0.19	−0.45
+φ is theoretically the ISSf input-uncertainty term (Cosner 2103.08041) — it's designed to defend against actuation noise σ. But empirically the policy uses φ as a spatial-panic knob. PPO is greedy and routes gradient through whatever reward signal is faster — grid_change wins, σ-tracking never learns.
+
+The concern this raises for Wk3:
+
+When we release a (additive slack for bounded ḣ disturbance) and c (h-shift for h-bias) after the perception transition, the same thing could happen. We'd ship a teacher where parameters adapt, but not to the axes the paper claims they adapt to.
+
+The reframing (this is the key insight):
+
+The theoretical roles of α/φ/a/c are already mathematically proven by Cosner, Molnar, Dean. We don't need to prove each parameter CAN play its theoretical role — that's done. What we need is a training method that ensures each parameter ACTUALLY learns its theoretical role. Different problem, different solutions.
+
+So we asked: what's the most efficient way to force each parameter toward its theoretical use?
+
+Three families of methods:
+
+Method	Mechanism	Trade-off
+(a) Auxiliary supervised loss	Add Pearson(param, theoretical_axis) as a loss term: L = L_PPO − λ·ρ(φ_t, σ_t) per param. Direct gradient pressure toward correct couplings.	Single training run. Operates at the gradient signal itself. Requires λ tuning. Allows the param to also use other inputs (soft constraint, not hard).
+(b) Architectural separation	Per-param policy heads, each with restricted input. φ-head sees only σ; α-head sees only dynamics features. Structurally cannot misuse.	Single run. Absolute guarantee. But locks out potentially useful combined signals (φ might genuinely want grid for timing even if σ sets magnitude).
+(c) Progressive staged training	Phase-by-phase: phase 1 releases α with only dynamics DR; phase 2 loads phase-1 ckpt, releases φ with only σ DR; etc. Phase 5 fine-tunes everything with full DR.	5x compute (~13h). Sequential. Uses existing infrastructure. Standard methodology.
+Our recommendation: (a) auxiliary loss, with (c) staged training as Plan B
+
+Reasons:
+
+(a) is the most direct — adds gradient pressure exactly where misalignment happens (the policy's choice of param values) without changing architecture or sacrificing flexibility
+(a) is a single training run, fits the deadline budget
+(b) is too restrictive — might hurt performance by blocking signals the policy legitimately needs (e.g., φ should probably condition on BOTH σ and grid; theory says σ but doesn't forbid grid)
+(c) is robust but expensive
+The auxiliary loss looks like:
+
+
+L_total = L_PPO  -  λ_α · ρ(α_t, mass_t)
+                 -  λ_φ · ρ(φ_t, σ_t)
+                 -  λ_a · ρ(a_t, v_obs_noise_t)
+                 -  λ_c · ρ(c_t, h_bias_t)
+Small λ values (~0.01) — enough to bias toward theoretical alignment without overriding the main return signal.
+
+Why we're NOT doing any of this yet:
+
+v21 (split action_rate) is in flight. If v21 lands with Pearson(φ, σ) > 0.20 AND BR wins combined fall+stuck, then PPO under full DR is sufficient and none of these methods are needed. Don't over-engineer before we know there's a problem.
+
+Decision tree after v21:
+
+v21 outcome	Action
+BR wins combined, Pearson(φ, σ) > 0.20, HeavyCOM improvement holds	None. Full DR is sufficient. Proceed to Wk3 perception transition.
+BR wins combined but Pearson(φ, σ) still ≈ 0	Re-frame paper claim (φ as "learned TISSf") OR add aux loss in v22 for σ-coupling specifically
+BR loses combined / fall_rate still high	Bigger problem. Auxiliary loss (v22) or staged training becomes main bet.
+For the paper claim — be precise:
+
+The cleanest honest framing right now is: "BR adapts CBF parameters to environment perception; α tracks dynamics features and φ tracks spatial proximity (TISSf-style)." The narrower claim "φ defends against σ" is NOT supported by v18-v20 data.
+
+If auxiliary loss in v22 successfully pulls Pearson(φ, σ) up while preserving BR's combined-win, the paper claim becomes: "Each robust CBF parameter is trained, via auxiliary supervised loss, to defend against the uncertainty class it was theoretically designed for; we demonstrate this empirically via per-parameter Pearson coupling diagnostics and BR-vs-baseline combined fall+stuck gaps across distributions." That's a stronger claim than what we have today.
+
+v21 finishes in ~3h. Numbers will tell us which branch to take.
+
+What's your read on the auxiliary-loss approach vs staged training? Any objections to "try simple first" — let v21 land before committing?
+
